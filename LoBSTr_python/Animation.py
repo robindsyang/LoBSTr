@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 
-class animation:
+class Animation:
     def __init__(self, name, coordinate_system, fps, length, joints, parents,
                  local_transformations,
                  world_transformations):
@@ -17,6 +17,8 @@ class animation:
         self.local_transformations = local_transformations
         self.world_transformations = world_transformations
         self.reflocal_transformations = local_transformations
+        self.body_velocities = np.zeros(world_transformations.shape)
+        self.ref_velocities = np.zeros(world_transformations.shape)
 
     def load_bvh(filepath, coordinate_system, scaling_parameter):
         base = os.path.basename(filepath)
@@ -117,10 +119,10 @@ class animation:
         # world_transformations = world_transformations[:, :, :3, 1:].reshape(length, joints.shape[0], -1)
 
         # 16d
-        local_transformations = local_transformations.reshape(length, joints.shape[0], -1)
-        world_transformations = world_transformations.reshape(length, joints.shape[0], -1)
+        # local_transformations = local_transformations.reshape(length, joints.shape[0], -1)
+        # world_transformations = world_transformations.reshape(length, joints.shape[0], -1)
 
-        return animation(name, coordinate_system, fps, length, joints, parents,
+        return Animation(name, coordinate_system, fps, length, joints, parents,
                          local_transformations, world_transformations)
 
     def delete_joints(self, joint_names):
@@ -134,7 +136,7 @@ class animation:
                 for f in range(self.length):
                     parent_world_t = self.world_transformations[f, parent_idx].reshape(4, 4)
                     child_world_t = self.world_transformations[f, child].reshape(4, 4)
-                    child_local_t = np.matmul(np.linalg.inv(parent_world_t), child_world_t).reshape(-1)
+                    child_local_t = np.matmul(np.linalg.inv(parent_world_t), child_world_t)
                     self.local_transformations[f, child] = child_local_t
 
             indices = np.where(self.parents > idx)
@@ -162,7 +164,6 @@ class animation:
 
     def compute_reflocal_transform(self):
         reflocal_transformations = self.local_transformations.copy()
-        reflocal_transformations = reflocal_transformations.reshape(self.length, self.joints.shape[0], 4, 4)
 
         for f in range(self.length):
             basis_matrix = np.transpose(reflocal_transformations[f, 0, :3, :3])
@@ -181,15 +182,28 @@ class animation:
                 d_joint_reflocal_t = np.matmul(np.linalg.inv(ref_world_t), d_joint_world_t)
                 reflocal_transformations[f, j] = d_joint_reflocal_t
 
+        # self.reflocal_transformations = reflocal_transformations.reshape(self.length, self.joints.shape[0], -1)
         self.reflocal_transformations = reflocal_transformations
 
-    #def downsample(self, source_fps, target_fps):
+    def compute_velocities(self):
+        self.body_velocities = np.delete(self.body_velocities, 0, 0)
+        self.ref_velocities = np.delete(self.ref_velocities, 0, 0)
+
+        for f in range(self.length):
+            ref_transform = self.world_transformations[f, 0]
+            for j in range(len(self.joints)):
+                self.body_velocities[f, j] = np.matmul(np.linalg.inv(self.world_transformations[f, j]), self.world_transformations[f + 1, j])
+
+
+        # delete first frames to match the length
+
+    # def downsample(self, source_fps, target_fps):
 
 
 if __name__ == '__main__':
     # a = animation.load_bvh('./data/bvh_test_PFNN.bvh', 'left', 1.0)
     filename = 'LocomotionFlat01_000'
-    a = animation.load_bvh('./data/PFNN/' + filename + '.bvh', 'left', 0.0594)
+    a = Animation.load_bvh('./data/PFNN/' + filename + '.bvh', 'left', 0.0594)
 
     a.delete_joints(['LHipJoint', 'RHipJoint',
                      'LowerBack', 'Neck',
