@@ -1,0 +1,36 @@
+# Node
+npm-debug.log
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# WebStorm
+.idea/
+
+# vi
+*~
+
+# General
+log/
+*.log
+
+# etc...
+
+# Python
+*.npz
+*.csv
+*.bvh
+
+# Unity
+*.meta
+*.csproj
+*.sln
+Library/
+Logs/
+obj/
+Packages/
+UserSettings/
+Temp/
