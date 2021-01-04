@@ -16,9 +16,9 @@ class Animation:
         self.parents = parents
         self.local_transformations = local_transformations
         self.world_transformations = world_transformations
-        self.reflocal_transformations = local_transformations
-        self.body_velocities = np.zeros(world_transformations.shape)
-        self.ref_velocities = np.zeros(world_transformations.shape)
+        self.reflocal_transformations = None
+        self.body_velocities = None
+        self.ref_velocities = None
 
     def load_bvh(filepath, coordinate_system, scaling_parameter):
         base = os.path.basename(filepath)
@@ -153,8 +153,15 @@ class Animation:
             data = self.local_transformations.copy()
         elif representation == 'reflocal':
             data = self.reflocal_transformations.copy()
-        else:
+        elif representation == 'world':
             data = self.world_transformations.copy()
+        elif representation == 'body_vel':
+            data = self.body_velocities.copy()
+        elif representation == 'ref_vel':
+            data = self.ref_velocities.copy()
+        else:
+            print("wrong representation")
+            exit()
 
         data = data.reshape(self.length, self.joints.shape[0], 4, 4)
 
@@ -186,24 +193,33 @@ class Animation:
         self.reflocal_transformations = reflocal_transformations
 
     def compute_velocities(self):
-        self.body_velocities = np.delete(self.body_velocities, 0, 0)
-        self.ref_velocities = np.delete(self.ref_velocities, 0, 0)
+        self.body_velocities = np.delete(self.world_transformations.copy(), 0, 0)
+        self.ref_velocities = np.delete(self.world_transformations.copy(), 0, 0)
 
-        for f in range(self.length):
-            ref_transform = self.world_transformations[f, 0]
+        for f in range(self.length - 1):
+            ref_transform = self.world_transformations[f + 1, 0]
             for j in range(len(self.joints)):
-                self.body_velocities[f, j] = np.matmul(np.linalg.inv(self.world_transformations[f, j]), self.world_transformations[f + 1, j])
-
+                self.body_velocities[f, j] = np.matmul(np.linalg.inv(self.world_transformations[f, j]),
+                                                       self.world_transformations[f + 1, j])
+                self.ref_velocities[f, j] = np.matmul(np.linalg.inv(ref_transform), self.body_velocities[f, j])
 
         # delete first frames to match the length
+        self.local_transformations = np.delete(self.local_transformations, 0, 0)
+        self.world_transformations = np.delete(self.world_transformations, 0, 0)
+        self.reflocal_transformations = np.delete(self.reflocal_transformations, 0, 0)
+        self.length -= 1
 
-    # def downsample(self, source_fps, target_fps):
-
+    def downsample_half(self):
+        self.local_transformations = self.local_transformations[::2]
+        self.world_transformations = self.world_transformations[::2]
+        self.length = self.local_transformations.shape[0]
 
 if __name__ == '__main__':
     # a = animation.load_bvh('./data/bvh_test_PFNN.bvh', 'left', 1.0)
     filename = 'LocomotionFlat01_000'
     a = Animation.load_bvh('./data/PFNN/' + filename + '.bvh', 'left', 0.0594)
+
+    a.downsample_half()
 
     a.delete_joints(['LHipJoint', 'RHipJoint',
                      'LowerBack', 'Neck',
@@ -218,6 +234,16 @@ if __name__ == '__main__':
 
     a.compute_reflocal_transform()
 
+    a.compute_velocities()
+
+    print(a.local_transformations.shape)
+    print(a.world_transformations.shape)
+    print(a.reflocal_transformations.shape)
+    print(a.body_velocities.shape)
+    print(a.ref_velocities.shape)
+
     a.write_csv('local', '%1.6f')
     a.write_csv('world', '%1.6f')
     a.write_csv('reflocal', '%1.6f')
+    a.write_csv('body_vel', '%1.6f')
+    a.write_csv('ref_vel', '%1.6f')
