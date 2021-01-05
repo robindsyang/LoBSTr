@@ -30,8 +30,8 @@ public class PlacCSV_Editor : Editor
 
         if (GUILayout.Button("Stop Animation"))
         {
-            playcsv.isPlay = false;
             playcsv.current_frame = 0;
+            playcsv.isPlay = false;
         }
     }
 }

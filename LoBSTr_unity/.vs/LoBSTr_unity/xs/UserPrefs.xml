@@ -1,19 +1,26 @@
 ﻿<Properties StartupConfiguration="{52BB5589-589E-80B5-F842-6D267C98862F}|">
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/PlayCSV.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/PlacCSV_Editor.cs">
     <Files>
-      <File FileName="Assets/Scripts/PlayCSV.cs" Line="77" Column="6" />
+      <File FileName="Assets/Scripts/PlayCSV.cs" Line="86" Column="18" />
+      <File FileName="Assets/Scripts/PlacCSV_Editor.cs" Line="34" Column="36" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
-          <Node name="LoBSTr_unity" expanded="True" selected="True" />
+          <Node name="LoBSTr_unity" expanded="True">
+            <Node name="Assets" expanded="True">
+              <Node name="Scripts" expanded="True">
+                <Node name="PlacCSV_Editor.cs" selected="True" />
+              </Node>
+            </Node>
+          </Node>
         </State>
       </Pad>
     </Pads>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="36324bba-4b48-47f6-9075-05a80e4b2971" />
+  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="ed3c557d-b27b-47bc-b68f-aba148fe807a" />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>

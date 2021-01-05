@@ -7,7 +7,7 @@ from scipy.spatial.transform import Rotation as R
 class Animation:
     def __init__(self, name, coordinate_system, fps, length, joints, parents,
                  local_transformations,
-                 world_transformations):
+                 world_transformations, contact):
         self.name = name
         self.coordinate_system = coordinate_system
         self.fps = fps
@@ -19,6 +19,7 @@ class Animation:
         self.reflocal_transformations = None
         self.body_velocities = None
         self.ref_velocities = None
+        self.contact = contact
 
     def load_bvh(filepath, coordinate_system, scaling_parameter):
         base = os.path.basename(filepath)
@@ -101,6 +102,8 @@ class Animation:
 
         local_transformations = np.zeros((length, joints.shape[0], 4, 4))
         world_transformations = np.zeros((length, joints.shape[0], 4, 4))
+        contact = []
+        toebase_indices = [i for i, joint in enumerate(joints) if "ToeBase" in joint]
 
         for f in range(length):
             world_transformations[f, 0] = np.eye(4)
@@ -114,6 +117,14 @@ class Animation:
                 local_transformations[f, j - 1] = local_t_mat
                 world_transformations[f, j - 1] = np.matmul(world_transformations[f, parents[j - 1]], local_t_mat)
 
+            for j in toebase_indices:
+                if world_transformations[f, j, 1, 3] < 0.05:
+                    contact.append(1)
+                else:
+                    contact.append(0)
+
+        contact = np.array(contact).reshape(length, 2)
+
         # 9d
         # local_transformations = local_transformations[:, :, :3, 1:].reshape(length, joints.shape[0], -1)
         # world_transformations = world_transformations[:, :, :3, 1:].reshape(length, joints.shape[0], -1)
@@ -122,8 +133,9 @@ class Animation:
         # local_transformations = local_transformations.reshape(length, joints.shape[0], -1)
         # world_transformations = world_transformations.reshape(length, joints.shape[0], -1)
 
+
         return Animation(name, coordinate_system, fps, length, joints, parents,
-                         local_transformations, world_transformations)
+                         local_transformations, world_transformations, contact)
 
     def delete_joints(self, joint_names):
         for joint in joint_names:
@@ -212,7 +224,38 @@ class Animation:
     def downsample_half(self):
         self.local_transformations = self.local_transformations[::2]
         self.world_transformations = self.world_transformations[::2]
+        self.contact = self.contact[::2]
         self.length = self.local_transformations.shape[0]
+
+    def add_noise(self, sigma, degree):
+        for f in range(self.length):
+            for j in range(len(self.joints)):
+                noise_transformation = np.eye(4)
+
+                # random angle
+                phi = np.random.uniform(0, np.pi * 2)
+                cos_theta = np.random.uniform(-1, 1)
+
+                theta = np.arccos(cos_theta)
+                x = np.sin(theta) * np.cos(phi)
+                y = np.sin(theta) * np.sin(phi)
+                z = np.cos(theta)
+
+                axis = np.array([x, y, z])
+
+                radian = np.deg2rad(degree)
+                rot = R.from_rotvec(radian * axis).as_matrix()
+
+                # random distance
+                scale = np.random.normal(0, sigma)
+                v = np.random.uniform(-1, 1, size=3)
+                v = v / np.linalg.norm(v) * scale
+
+                noise_transformation[:3, :3] = rot
+                noise_transformation[:3, 3] = np.transpose(v)
+
+                self.world_transformations[f, j] = np.matmul(self.world_transformations[f, j], noise_transformation)
+
 
 if __name__ == '__main__':
     # a = animation.load_bvh('./data/bvh_test_PFNN.bvh', 'left', 1.0)
@@ -221,10 +264,12 @@ if __name__ == '__main__':
 
     a.downsample_half()
 
-    a.delete_joints(['LHipJoint', 'RHipJoint',
-                     'LowerBack', 'Neck',
-                     'LeftShoulder', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
-                     'RightShoulder', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
+    a.delete_joints(['LHipJoint', 'LeftToeBase', 'RHipJoint', 'RightToeBase',
+                     'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
+                     'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
+                     'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
+
+    a.add_noise(0.01, 1)
 
     # a.delete_joints(['LHipJoint', 'LeftUpLeg', 'LeftLeg', 'LeftFoot',
     #                  'RHipJoint', 'RightUpLeg', 'RightLeg', 'RightFoot',
