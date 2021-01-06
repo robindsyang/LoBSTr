@@ -45,9 +45,9 @@ class MocapDataest(Dataset):
         #           'bodyvel': torch.tensor(bodyvel[frame:frame + self.window_size]),
         #           'refvel': torch.tensor(refvel[frame:frame + self.window_size])}
 
-        sample = {'input': torch.tensor(refvel[frame:frame + self.window_size, 6:]),
-                  'output_pose': torch.tensor(reflocal[frame + self.window_size - 1, :6]),
-                  'output_contact': torch.tensor(contact[frame + self.window_size - 1])}
+        sample = {'input': torch.tensor(refvel[frame:frame + self.window_size, 6:].reshape(60, -1)).float(),
+                  'output_pose': torch.tensor(reflocal[frame + self.window_size - 1, :6].flatten()).float(),
+                  'output_contact': torch.tensor(contact[frame + self.window_size - 1]).float()}
 
         return sample
 

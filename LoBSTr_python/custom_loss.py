@@ -9,3 +9,6 @@ class FK_Velocity_Loss(nn.Module):
     def __init__(self):
         super(FK_Velocity_Loss, self).__init__()
         torch.set_printoptions(precision=6)
+
+    def forward(self):
+        return

@@ -41,9 +41,10 @@ class LoBSTr_GRU(nn.Module):
 
         return lower_pose, contact
 
+
 if __name__ == '__main__':
-    model = LoBSTr_GRU(4*4*4, 6*4*4, 1024, 256).to(device)
-    input = torch.rand((2, 60, 4*4*4)).to(device)
+    model = LoBSTr_GRU(4 * 4 * 4, 6 * 4 * 4, 1024, 256).to(device)
+    input = torch.rand((2, 60, 4 * 4 * 4)).to(device)
     output_pose, output_contact = model(input)
     print(output_pose.shape)
     print(output_contact.shape)
