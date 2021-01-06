@@ -1429,38 +1429,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target_fps: 60
-  file_path: /Animations/LocomotionFlat01_000
+  file_path: /Animations/m_LocomotionFlat01_000
   representation: 1
-  Length: 0
+  Length: 4086
   Root: {fileID: 890602078}
   Joints:
   - {fileID: 890602078}
-  - {fileID: 0}
   - {fileID: 1761777404}
   - {fileID: 1152767802}
   - {fileID: 942366319}
   - {fileID: 1816459698}
-  - {fileID: 0}
   - {fileID: 622356199}
   - {fileID: 28531870}
   - {fileID: 954342577}
   - {fileID: 798880154}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
   - {fileID: 234193593}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 190122178}
   - {fileID: 344961242}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 716477987}
   - {fileID: 1907636746}
-  - {fileID: 0}
+  - {fileID: 1563954387}
   isPlay: 0
   current_frame: 0
   vel_updated: 0
