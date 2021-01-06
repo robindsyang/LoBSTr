@@ -22,7 +22,8 @@ for file in files:
     start = time.time()
     data = Anim.load_bvh(path + file, 'left', scaling_parameter)
     data.downsample_half()
-    data.delete_joints(['LHipJoint', 'LeftToeBase', 'RHipJoint', 'RightToeBase',
+    #data.delete_joints(['LHipJoint', 'LeftToeBase', 'RHipJoint', 'RightToeBase',
+    data.delete_joints(['LHipJoint', 'RHipJoint',
                         'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
                         'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
                         'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])

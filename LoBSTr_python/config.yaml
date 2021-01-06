@@ -2,7 +2,7 @@ EG2021: &DEFAULT
   training_set: dataset_EG2021_60fps.npz
   valid_set: dataset_EG2021_60fps.npz
 
-  lr: 1e-3
+  lr: 1.0e-3
   lr_decay: 0.999
   num_epochs: 1500
 

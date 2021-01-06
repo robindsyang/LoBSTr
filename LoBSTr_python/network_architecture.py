@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 
 nn.Module.dump_patches = True
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 
 class LoBSTr_GRU(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim, latent_dim):
         super(LoBSTr_GRU, self).__init__()
+
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
@@ -25,12 +25,8 @@ class LoBSTr_GRU(nn.Module):
         nn.init.kaiming_normal_(self.fc2.weight)
         nn.init.kaiming_normal_(self.contact1.weight)
 
-    def forward(self, input_tensor, infer=False):
-        if infer:
-            hidden = torch.zeros(1, input_tensor.shape[0], self.hidden_dim)
-        else:
-            hidden = torch.zeros(1, input_tensor.shape[0], self.hidden_dim).to(device)
-
+    def forward(self, input_tensor):
+        hidden = torch.zeros(1, input_tensor.shape[0], self.hidden_dim).to(self.device)
         out, hidden = self.gru(input_tensor, hidden)
         gru_out = out[:, -1]
         out = self.fc1(gru_out)

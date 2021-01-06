@@ -3,6 +3,11 @@ import numpy as np
 import time
 from torch.utils.data import Dataset, DataLoader
 
+# upper indices
+upper_indices = [0, 9, 10, 11]
+lower_indices = [1, 2, 3, 5, 6, 7]
+toebase_indices = [4, 8]
+
 
 class MocapDataest(Dataset):
     """Motion Capture dataset"""
@@ -16,8 +21,31 @@ class MocapDataest(Dataset):
         self.reflocal = dataset_npz['reflocal']
         self.bodyvel = dataset_npz['bodyvel']
         self.refvel = dataset_npz['refvel']
-        self.contact = dataset_npz['contact']
         self.window_size = window_size
+
+        for i in range(len(self)):
+            if i == 0:
+                input = self.refvel[i]
+                output = self.reflocal[i]
+            else:
+                input = np.concatenate((input, self.refvel[i]), axis=0)
+                output = np.concatenate((output, self.reflocal[i]), axis=0)
+
+        input = input[:, upper_indices].reshape(input.shape[0], -1)
+        output = output[:, lower_indices].reshape(output.shape[0], -1)
+
+        self.input_mean = np.mean(input, axis=0)
+        self.input_std = np.std(input, axis=0)
+        self.output_mean = np.mean(output, axis=0)
+        self.output_std = np.std(output, axis=0)
+
+        eps = 1e-16
+
+        for i in range(len(self)):
+            self.refvel[i] = (self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1) - self.input_mean)\
+                             /(self.input_std + eps)
+            self.reflocal[i] = (self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1) - self.output_mean)\
+                               / (self.output_std + eps)
 
     def __len__(self):
         return len(self.name)
@@ -32,31 +60,32 @@ class MocapDataest(Dataset):
         reflocal = self.reflocal[idx]
         bodyvel = self.bodyvel[idx]
         refvel = self.refvel[idx]
-        contact = self.contact[idx]
 
         np.random.seed(int((time.time() * 10000) % 1000))
         frame = np.random.randint(local.shape[0] - self.window_size + 1)
 
-        # sample = {'name': name,
-        #           'local': torch.tensor(local[frame:frame + self.window_size]),
-        #           'world': torch.tensor(world[frame:frame + self.window_size]),
-        #           'reflocal': torch.tensor(reflocal[frame:frame + self.window_size]),
-        #           'bodyvel': torch.tensor(bodyvel[frame:frame + self.window_size]),
-        #           'refvel': torch.tensor(refvel[frame:frame + self.window_size])}
+        toebase_transformations = world[frame + self.window_size - 2:frame + self.window_size, toebase_indices, :3, 3]
+        contact = np.zeros(2)
 
-        sample = {'input': torch.tensor(refvel[frame:frame + self.window_size, 6:].reshape(60, -1)).float(),
-                  'gt_pose': torch.tensor(reflocal[frame + self.window_size - 1, :6].flatten()).float(),
-                  'gt_contact': torch.tensor(contact[frame + self.window_size - 1]).long()}
+        if toebase_transformations[1, 0, 1] < 0.05:
+            contact[0] = 1
+        if toebase_transformations[1, 1, 1] < 0.05:
+            contact[1] = 1
+
+        sample = {'input': torch.tensor(refvel[frame:frame + self.window_size]).float(),
+                  'gt_pose': torch.tensor(reflocal[frame + self.window_size - 1]).float(),
+                  'gt_contact': torch.tensor(contact).long(),
+                  'gt_poss': torch.tensor(toebase_transformations).float()}
 
         return sample
 
-
 if __name__ == '__main__':
     mocap_dataset = MocapDataest('dataset_EG2021_60fps.npz', 60)
-    dataloader = DataLoader(mocap_dataset, batch_size=2, shuffle=True, num_workers=8)
+    dataloader = DataLoader(mocap_dataset, batch_size=2, shuffle=True, num_workers=1)
 
     for i_batch, sample_batched in enumerate(dataloader):
         print("batch num: " + str(i_batch), "batch size: " + str(len(sample_batched['input'])))
         print(sample_batched['input'].shape)
         print(sample_batched['gt_pose'].shape)
         print(sample_batched['gt_contact'].shape)
+        print(sample_batched['gt_poss'].shape)
