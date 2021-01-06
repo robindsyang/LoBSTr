@@ -16,7 +16,7 @@ class LoBSTr_GRU(nn.Module):
         self.gru = nn.GRU(self.input_dim, self.hidden_dim, bias=True, batch_first=True)
         self.fc1 = nn.Linear(self.hidden_dim, latent_dim)
         self.fc2 = nn.Linear(latent_dim, output_dim)
-        self.contact1 = nn.Linear(latent_dim, 2)
+        self.contact1 = nn.Linear(latent_dim, 4)
         self.relu = nn.ReLU()
         self.init_weights()
 

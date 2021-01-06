@@ -17,7 +17,6 @@ class MocapDataest(Dataset):
         self.bodyvel = dataset_npz['bodyvel']
         self.refvel = dataset_npz['refvel']
         self.contact = dataset_npz['contact']
-
         self.window_size = window_size
 
     def __len__(self):
@@ -35,7 +34,7 @@ class MocapDataest(Dataset):
         refvel = self.refvel[idx]
         contact = self.contact[idx]
 
-        np.random.seed(int((time.time()*10000)%1000))
+        np.random.seed(int((time.time() * 10000) % 1000))
         frame = np.random.randint(local.shape[0] - self.window_size + 1)
 
         # sample = {'name': name,
@@ -46,8 +45,8 @@ class MocapDataest(Dataset):
         #           'refvel': torch.tensor(refvel[frame:frame + self.window_size])}
 
         sample = {'input': torch.tensor(refvel[frame:frame + self.window_size, 6:].reshape(60, -1)).float(),
-                  'output_pose': torch.tensor(reflocal[frame + self.window_size - 1, :6].flatten()).float(),
-                  'output_contact': torch.tensor(contact[frame + self.window_size - 1]).float()}
+                  'gt_pose': torch.tensor(reflocal[frame + self.window_size - 1, :6].flatten()).float(),
+                  'gt_contact': torch.tensor(contact[frame + self.window_size - 1]).long()}
 
         return sample
 
@@ -59,5 +58,5 @@ if __name__ == '__main__':
     for i_batch, sample_batched in enumerate(dataloader):
         print("batch num: " + str(i_batch), "batch size: " + str(len(sample_batched['input'])))
         print(sample_batched['input'].shape)
-        print(sample_batched['output_pose'].shape)
-        print(sample_batched['output_contact'].shape)
+        print(sample_batched['gt_pose'].shape)
+        print(sample_batched['gt_contact'].shape)
