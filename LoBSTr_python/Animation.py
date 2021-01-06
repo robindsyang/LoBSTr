@@ -134,7 +134,7 @@ class Animation:
         # world_transformations = world_transformations.reshape(length, joints.shape[0], -1)
 
         return Animation(name, coordinate_system, fps, length, joints, parents, local_transformations,
-                         world_transformations) \
+                         world_transformations)
 
     def delete_joints(self, joint_names):
         for joint in joint_names:
