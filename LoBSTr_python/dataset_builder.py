@@ -19,10 +19,10 @@ ref_v_list = []
 contact_list = []
 
 for file in files:
+    """ Original """
     start = time.time()
     data = Anim.load_bvh(path + file, 'left', scaling_parameter)
     data.downsample_half()
-    #data.delete_joints(['LHipJoint', 'LeftToeBase', 'RHipJoint', 'RightToeBase',
     data.delete_joints(['LHipJoint', 'RHipJoint',
                         'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
                         'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
@@ -39,7 +39,29 @@ for file in files:
     ref_v_list.append(data.ref_velocities)
     contact_list.append(data.contact)
     end = time.time()
-    print(file + ' done / elapsed_time = ' + str(end - start))
+    print(data.name + ' done / elapsed_time = ' + str(end - start))
+
+    """ MIRRORED """
+    start = time.time()
+    data = data.mirror_sequence()
+    data.downsample_half()
+    data.delete_joints(['LHipJoint', 'RHipJoint',
+                        'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
+                        'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
+                        'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
+    data.add_noise(0.01, 1.5)
+    data.compute_reflocal_transform()
+    data.compute_velocities()
+
+    name_list.append(data.name)
+    local_t_list.append(data.local_transformations)
+    world_t_list.append(data.world_transformations)
+    reflocal_t_list.append(data.reflocal_transformations)
+    body_v_list.append(data.body_velocities)
+    ref_v_list.append(data.ref_velocities)
+    contact_list.append(data.contact)
+    end = time.time()
+    print(data.name + ' done / elapsed_time = ' + str(end - start))
 
 dataset_name = "dataset_EG2021_60fps"
 np.savez_compressed(dataset_name,

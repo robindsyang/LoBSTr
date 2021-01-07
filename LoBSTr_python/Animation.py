@@ -1,13 +1,12 @@
 import os
 import re
 import numpy as np
+from copy import copy, deepcopy
 from scipy.spatial.transform import Rotation as R
 
 
 class Animation:
-    def __init__(self, name, coordinate_system, fps, length, joints, parents,
-                 local_transformations,
-                 world_transformations):
+    def __init__(self, name, coordinate_system, fps, length, joints, parents, local_transformations):
         self.name = name
         self.coordinate_system = coordinate_system
         self.fps = fps
@@ -15,10 +14,24 @@ class Animation:
         self.joints = joints
         self.parents = parents
         self.local_transformations = local_transformations
-        self.world_transformations = world_transformations
+        self.world_transformations = None
         self.reflocal_transformations = None
         self.body_velocities = None
         self.ref_velocities = None
+
+    def copy(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        return result
+
+    def deepcopy(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
 
     def load_bvh(filepath, coordinate_system, scaling_parameter):
         base = os.path.basename(filepath)
@@ -100,41 +113,44 @@ class Animation:
         data[:, 1:] = data[:, 1:, [2, 1, 0]]
 
         local_transformations = np.zeros((length, joints.shape[0], 4, 4))
-        world_transformations = np.zeros((length, joints.shape[0], 4, 4))
-
-        # contact = []
-        # toebase_indices = [i for i, joint in enumerate(joints) if "ToeBase" in joint]
 
         for f in range(length):
-            world_transformations[f, 0] = np.eye(4)
             for j in range(1, joints.shape[0] + 1):
                 local_t_mat = np.eye(4)
                 r = R.from_euler('xyz', data[f, j], degrees=True)
                 p = data[f, 0] if j == 1 else offsets[j - 1]
                 local_t_mat[:3, 3] = p
                 local_t_mat[:3, :3] = r.as_matrix()
-
                 local_transformations[f, j - 1] = local_t_mat
-                world_transformations[f, j - 1] = np.matmul(world_transformations[f, parents[j - 1]], local_t_mat)
 
-        #     for j in toebase_indices:
-        #         if world_transformations[f, j, 1, 3] < 0.05:
-        #             contact.append(1)
-        #         else:
-        #             contact.append(0)
-        #
-        # contact = np.array(contact).reshape(length, 2)
+        return Animation(name, coordinate_system, fps, length, joints, parents, local_transformations)
 
-        # 9d
-        # local_transformations = local_transformations[:, :, :3, 1:].reshape(length, joints.shape[0], -1)
-        # world_transformations = world_transformations[:, :, :3, 1:].reshape(length, joints.shape[0], -1)
+    def mirror(self):
+        mirrored = self.deepcopy({})
+        mirrored.name = "m_" + mirrored.name
 
-        # 16d
-        # local_transformations = local_transformations.reshape(length, joints.shape[0], -1)
-        # world_transformations = world_transformations.reshape(length, joints.shape[0], -1)
+        left_indices = [i for i, joint in enumerate(mirrored.joints) if
+                        "LHip" in joint or "Left" in joint or "LThumb" in joint]
+        right_indices = [i for i, joint in enumerate(mirrored.joints) if
+                         "RHip" in joint or "Right" in joint or "RThumb" in joint]
 
-        return Animation(name, coordinate_system, fps, length, joints, parents, local_transformations,
-                         world_transformations)
+        temp = mirrored.local_transformations.copy()
+
+        # trajectory x -> -x
+        mirrored.local_transformations[:, 0, 0, 3] *= -1
+
+        # switch
+        mirrored.local_transformations[:, left_indices, :3, :3] = temp[:, right_indices, :3, :3]
+        mirrored.local_transformations[:, right_indices, :3, :3] = temp[:, left_indices, :3, :3]
+
+        # flip
+        rot_mat = mirrored.local_transformations[:, :, :3, :3].reshape(-1, 3, 3)
+        quat = (R.from_matrix(rot_mat)).as_quat()
+        quat[:, [1, 2]] *= -1
+        mirrored.local_transformations[:, :, :3, :3] \
+            = R.as_matrix(R.from_quat(quat)).reshape(mirrored.length, len(mirrored.joints), 3, 3)
+
+        return mirrored
 
     def delete_joints(self, joint_names):
         for joint in joint_names:
@@ -145,10 +161,8 @@ class Animation:
             for child in children_indices:
                 self.parents[child] = parent_idx
                 for f in range(self.length):
-                    parent_world_t = self.world_transformations[f, parent_idx].reshape(4, 4)
-                    child_world_t = self.world_transformations[f, child].reshape(4, 4)
-                    child_local_t = np.matmul(np.linalg.inv(parent_world_t), child_world_t)
-                    self.local_transformations[f, child] = child_local_t
+                    self.local_transformations[f, child] = np.matmul(self.local_transformations[f, idx],
+                                                                     self.local_transformations[f, child])
 
             indices = np.where(self.parents > idx)
             for id in indices:
@@ -157,28 +171,48 @@ class Animation:
             self.joints = np.delete(self.joints, idx)
             self.parents = np.delete(self.parents, idx)
             self.local_transformations = np.delete(self.local_transformations, idx, axis=1)
-            self.world_transformations = np.delete(self.world_transformations, idx, axis=1)
 
-    def write_csv(self, representation, precision):
-        if representation == 'local':
-            data = self.local_transformations.copy()
-        elif representation == 'reflocal':
-            data = self.reflocal_transformations.copy()
-        elif representation == 'world':
-            data = self.world_transformations.copy()
-        elif representation == 'body_vel':
-            data = self.body_velocities.copy()
-        elif representation == 'ref_vel':
-            data = self.ref_velocities.copy()
-        else:
-            print("wrong representation")
-            exit()
+    def downsample_half(self):
+        self.local_transformations = self.local_transformations[::2]
+        self.length = self.local_transformations.shape[0]
 
-        data = data.reshape(self.length, self.joints.shape[0], 4, 4)
+    def compute_world_transform(self, noised=False, noised_joints=None, sigma=None, degree=None):
+        world_transformations = np.zeros((self.length, self.joints.shape[0], 4, 4))
+        for f in range(self.length):
+            world_transformations[f, 0] = np.eye(4)
+            for j in range(0, self.joints.shape[0]):
+                local_t_mat = self.local_transformations[f, j]
+                world_transformations[f, j] = np.matmul(world_transformations[f, self.parents[j]], local_t_mat)
+                # if noised and self.joints[j] in noised_joints:
+                #     noise_transformation = np.eye(4)
+                #
+                #     # random angle
+                #     phi = np.random.uniform(0, np.pi * 2)
+                #     cos_theta = np.random.uniform(-1, 1)
+                #
+                #     theta = np.arccos(cos_theta)
+                #     x = np.sin(theta) * np.cos(phi)
+                #     y = np.sin(theta) * np.sin(phi)
+                #     z = np.cos(theta)
+                #
+                #     axis = np.array([x, y, z])
+                #
+                #     radian = np.deg2rad(degree)
+                #     rot = R.from_rotvec(radian * axis).as_matrix()
+                #
+                #     # random distance
+                #     scale = np.random.normal(0, sigma)
+                #     v = np.random.uniform(-1, 1, size=3)
+                #     v = v / np.linalg.norm(v) * scale
+                #
+                #     noise_transformation[:3, :3] = rot
+                #     noise_transformation[:3, 3] = np.transpose(v)
+                #     world_transformations[f, j] = np.matmul(world_transformations[f, j], noise_transformation)
+                #     children_indices = np.where(self.parents == j)
+                #     for k in children_indices:
+                #         world_transformations[f, k] = np.matmul(np.linalg.inv(world_transformations[f, k]), noise_transformation,)
 
-        # 9d transformation
-        data = data[:, :, :3, 1:].reshape(self.length, -1)
-        np.savetxt(str(self.name) + '_' + representation + '.csv', data, delimiter=',', fmt=precision)
+        self.world_transformations = world_transformations
 
     def compute_reflocal_transform(self):
         reflocal_transformations = self.local_transformations.copy()
@@ -220,67 +254,82 @@ class Animation:
         self.reflocal_transformations = np.delete(self.reflocal_transformations, 0, 0)
         self.length -= 1
 
-    def downsample_half(self):
-        self.local_transformations = self.local_transformations[::2]
-        self.world_transformations = self.world_transformations[::2]
-        self.length = self.local_transformations.shape[0]
+    def write_csv(self, representation, precision):
+        if representation == 'local':
+            data = self.local_transformations.copy()
+        elif representation == 'reflocal':
+            data = self.reflocal_transformations.copy()
+        elif representation == 'world':
+            data = self.world_transformations.copy()
+        elif representation == 'body_vel':
+            data = self.body_velocities.copy()
+        elif representation == 'ref_vel':
+            data = self.ref_velocities.copy()
+        else:
+            print("wrong representation")
+            exit()
 
-    def add_noise(self, sigma, degree):
-        for f in range(self.length):
-            for j in range(len(self.joints)):
-                noise_transformation = np.eye(4)
+        data = data.reshape(self.length, self.joints.shape[0], 4, 4)
 
-                # random angle
-                phi = np.random.uniform(0, np.pi * 2)
-                cos_theta = np.random.uniform(-1, 1)
-
-                theta = np.arccos(cos_theta)
-                x = np.sin(theta) * np.cos(phi)
-                y = np.sin(theta) * np.sin(phi)
-                z = np.cos(theta)
-
-                axis = np.array([x, y, z])
-
-                radian = np.deg2rad(degree)
-                rot = R.from_rotvec(radian * axis).as_matrix()
-
-                # random distance
-                scale = np.random.normal(0, sigma)
-                v = np.random.uniform(-1, 1, size=3)
-                v = v / np.linalg.norm(v) * scale
-
-                noise_transformation[:3, :3] = rot
-                noise_transformation[:3, 3] = np.transpose(v)
-
-                self.world_transformations[f, j] = np.matmul(self.world_transformations[f, j], noise_transformation)
+        # 9d transformation
+        data = data[:, :, :3, 1:].reshape(self.length, -1)
+        np.savetxt(str(self.name) + '_' + representation + '.csv', data, delimiter=',', fmt=precision)
 
 
 if __name__ == '__main__':
     # a = animation.load_bvh('./data/bvh_test_PFNN.bvh', 'left', 1.0)
     filename = 'LocomotionFlat01_000'
     a = Animation.load_bvh('./data/PFNN/' + filename + '.bvh', 'left', 0.0594)
+    m_a = a.mirror()
 
     a.downsample_half()
+    m_a.downsample_half()
 
     a.delete_joints(['LHipJoint', 'RHipJoint',
                      'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
                      'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
                      'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-  
-    a.add_noise(0.01, 1)
+    m_a.delete_joints(['LHipJoint', 'RHipJoint',
+                       'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
+                       'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
+                       'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
 
-    # a.delete_joints(['LHipJoint', 'LeftUpLeg', 'LeftLeg', 'LeftFoot',
-    #                  'RHipJoint', 'RightUpLeg', 'RightLeg', 'RightFoot',
+    a.write_csv('local', '%1.6f')
+    m_a.write_csv('local', '%1.6f')
+    a.compute_world_transform(True, ['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 10)
+    m_a.compute_world_transform(True, ['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 10)
+    a.write_csv('world', '%1.6f')
+    m_a.write_csv('world', '%1.6f')
+
+    a.compute_reflocal_transform()
+    m_a.compute_reflocal_transform()
+    a.write_csv('reflocal', '%1.6f')
+    m_a.write_csv('reflocal', '%1.6f')
+
+    a.compute_velocities()
+    m_a.compute_velocities()
+
+    # a.downsample_half()
+    #
+    # a.delete_joints(['LHipJoint', 'RHipJoint',
     #                  'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
     #                  'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
     #                  'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-
-    a.compute_reflocal_transform()
-
-    a.compute_velocities()
-
-    a.write_csv('local', '%1.6f')
-    a.write_csv('world', '%1.6f')
-    a.write_csv('reflocal', '%1.6f')
+    #
+    # a.add_noise(0.01, 1)
+    #
+    # # a.delete_joints(['LHipJoint', 'LeftUpLeg', 'LeftLeg', 'LeftFoot',
+    # #                  'RHipJoint', 'RightUpLeg', 'RightLeg', 'RightFoot',
+    # #                  'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
+    # #                  'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
+    # #                  'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
+    #
+    # a.compute_reflocal_transform()
+    #
+    # a.compute_velocities()
+    #
+    # a.write_csv('local', '%1.6f')
+    # a.write_csv('world', '%1.6f')
+    # a.write_csv('reflocal', '%1.6f')
     # a.write_csv('body_vel', '%1.6f')
     # a.write_csv('ref_vel', '%1.6f')
