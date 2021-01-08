@@ -16,6 +16,7 @@ class Animation:
         self.local_transformations = local_transformations
         self.world_transformations = None
         self.reflocal_transformations = None
+        self.refworld_transformations = None
         self.body_velocities = None
         self.ref_velocities = None
 
@@ -176,46 +177,48 @@ class Animation:
         self.local_transformations = self.local_transformations[::2]
         self.length = self.local_transformations.shape[0]
 
-    def compute_world_transform(self, noised=False, noised_joints=None, sigma=None, degree=None):
+    def compute_world_transform(self):
         world_transformations = np.zeros((self.length, self.joints.shape[0], 4, 4))
         for f in range(self.length):
             world_transformations[f, 0] = np.eye(4)
             for j in range(0, self.joints.shape[0]):
                 local_t_mat = self.local_transformations[f, j]
                 world_transformations[f, j] = np.matmul(world_transformations[f, self.parents[j]], local_t_mat)
-                # if noised and self.joints[j] in noised_joints:
-                #     noise_transformation = np.eye(4)
-                #
-                #     # random angle
-                #     phi = np.random.uniform(0, np.pi * 2)
-                #     cos_theta = np.random.uniform(-1, 1)
-                #
-                #     theta = np.arccos(cos_theta)
-                #     x = np.sin(theta) * np.cos(phi)
-                #     y = np.sin(theta) * np.sin(phi)
-                #     z = np.cos(theta)
-                #
-                #     axis = np.array([x, y, z])
-                #
-                #     radian = np.deg2rad(degree)
-                #     rot = R.from_rotvec(radian * axis).as_matrix()
-                #
-                #     # random distance
-                #     scale = np.random.normal(0, sigma)
-                #     v = np.random.uniform(-1, 1, size=3)
-                #     v = v / np.linalg.norm(v) * scale
-                #
-                #     noise_transformation[:3, :3] = rot
-                #     noise_transformation[:3, 3] = np.transpose(v)
-                #     world_transformations[f, j] = np.matmul(world_transformations[f, j], noise_transformation)
-                #     children_indices = np.where(self.parents == j)
-                #     for k in children_indices:
-                #         world_transformations[f, k] = np.matmul(np.linalg.inv(world_transformations[f, k]), noise_transformation,)
 
         self.world_transformations = world_transformations
 
-    def compute_reflocal_transform(self):
+    def add_noise_world(self, noised_joints, sigma, degree):
+        for f in range(self.length):
+            for joint in noised_joints:
+                j = np.where(self.joints == joint)[0][0]
+                noise_transformation = np.eye(4)
+
+                # random angle
+                phi = np.random.uniform(0, np.pi * 2)
+                cos_theta = np.random.uniform(-1, 1)
+
+                theta = np.arccos(cos_theta)
+                x = np.sin(theta) * np.cos(phi)
+                y = np.sin(theta) * np.sin(phi)
+                z = np.cos(theta)
+
+                axis = np.array([x, y, z])
+
+                radian = np.deg2rad(degree)
+                rot = R.from_rotvec(radian * axis).as_matrix()
+
+                # random distance
+                scale = np.random.normal(0, sigma)
+                v = np.random.uniform(-1, 1, size=3)
+                v = v / np.linalg.norm(v) * scale
+
+                noise_transformation[:3, :3] = rot
+                noise_transformation[:3, 3] = np.transpose(v)
+                self.world_transformations[f, j] = np.matmul(self.world_transformations[f, j], noise_transformation)
+
+    def compute_ref_transform(self):
         reflocal_transformations = self.local_transformations.copy()
+        refworld_transformations = self.world_transformations.copy()
 
         for f in range(self.length):
             basis_matrix = np.transpose(reflocal_transformations[f, 0, :3, :3])
@@ -229,13 +232,16 @@ class Animation:
             direct_joints = np.delete(direct_joints, 0)
 
             ref_world_t = reflocal_transformations[f, 0].reshape(4, 4)
-            for j in direct_joints:
+            for j in range(1, self.joints.shape[0]):
                 d_joint_world_t = self.world_transformations[f, j].reshape(4, 4)
                 d_joint_reflocal_t = np.matmul(np.linalg.inv(ref_world_t), d_joint_world_t)
-                reflocal_transformations[f, j] = d_joint_reflocal_t
+                refworld_transformations[f, j] = d_joint_reflocal_t
 
-        # self.reflocal_transformations = reflocal_transformations.reshape(self.length, self.joints.shape[0], -1)
+                if j in direct_joints:
+                    reflocal_transformations[f, j] = d_joint_reflocal_t
+
         self.reflocal_transformations = reflocal_transformations
+        self.refworld_transformations = refworld_transformations
 
     def compute_velocities(self):
         self.body_velocities = np.delete(self.world_transformations.copy(), 0, 0)
@@ -261,6 +267,8 @@ class Animation:
             data = self.reflocal_transformations.copy()
         elif representation == 'world':
             data = self.world_transformations.copy()
+        elif representation == 'refworld':
+            data = self.refworld_transformations.copy()
         elif representation == 'body_vel':
             data = self.body_velocities.copy()
         elif representation == 'ref_vel':
@@ -277,59 +285,29 @@ class Animation:
 
 
 if __name__ == '__main__':
-    # a = animation.load_bvh('./data/bvh_test_PFNN.bvh', 'left', 1.0)
     filename = 'LocomotionFlat01_000'
     a = Animation.load_bvh('./data/PFNN/' + filename + '.bvh', 'left', 0.0594)
-    m_a = a.mirror()
-
     a.downsample_half()
-    m_a.downsample_half()
-
     a.delete_joints(['LHipJoint', 'RHipJoint',
                      'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
                      'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
                      'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-    m_a.delete_joints(['LHipJoint', 'RHipJoint',
-                       'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
-                       'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
-                       'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
+
+    m_a = a.mirror()
 
     a.write_csv('local', '%1.6f')
     m_a.write_csv('local', '%1.6f')
-    a.compute_world_transform(True, ['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 10)
-    m_a.compute_world_transform(True, ['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 10)
+    a.compute_world_transform()
+    m_a.compute_world_transform()
+    a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
+    m_a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
     a.write_csv('world', '%1.6f')
     m_a.write_csv('world', '%1.6f')
-
-    a.compute_reflocal_transform()
-    m_a.compute_reflocal_transform()
+    a.compute_ref_transform()
+    m_a.compute_ref_transform()
     a.write_csv('reflocal', '%1.6f')
     m_a.write_csv('reflocal', '%1.6f')
-
+    a.write_csv('refworld', '%1.6f')
+    m_a.write_csv('refworld', '%1.6f')
     a.compute_velocities()
     m_a.compute_velocities()
-
-    # a.downsample_half()
-    #
-    # a.delete_joints(['LHipJoint', 'RHipJoint',
-    #                  'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
-    #                  'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
-    #                  'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-    #
-    # a.add_noise(0.01, 1)
-    #
-    # # a.delete_joints(['LHipJoint', 'LeftUpLeg', 'LeftLeg', 'LeftFoot',
-    # #                  'RHipJoint', 'RightUpLeg', 'RightLeg', 'RightFoot',
-    # #                  'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
-    # #                  'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
-    # #                  'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-    #
-    # a.compute_reflocal_transform()
-    #
-    # a.compute_velocities()
-    #
-    # a.write_csv('local', '%1.6f')
-    # a.write_csv('world', '%1.6f')
-    # a.write_csv('reflocal', '%1.6f')
-    # a.write_csv('body_vel', '%1.6f')
-    # a.write_csv('ref_vel', '%1.6f')

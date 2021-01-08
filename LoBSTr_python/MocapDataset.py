@@ -48,7 +48,7 @@ class MocapDataest(Dataset):
                                / (self.output_std + eps)
 
     def __len__(self):
-        return len(self.name)
+        return self.name.shape[0]
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
@@ -74,8 +74,9 @@ class MocapDataest(Dataset):
 
         sample = {'input': torch.tensor(refvel[frame:frame + self.window_size]).float(),
                   'gt_pose': torch.tensor(reflocal[frame + self.window_size - 1]).float(),
-                  'gt_contact': torch.tensor(contact).long(),
-                  'gt_poss': torch.tensor(toebase_transformations).float()}
+                  'gt_prev_pose': torch.tensor(reflocal[frame + self.window_size - 2]).float(),
+                  'gt_contact': torch.tensor(contact).long()}
+                  # 'gt_poss': torch.tensor(toebase_transformations).float()}
 
         return sample
 

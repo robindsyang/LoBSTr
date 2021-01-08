@@ -6,7 +6,14 @@ import time
 scaling_parameter = 0.0594
 
 files = []
-path = './data_test/'
+#path = './data_test/'
+
+path = './data_old/train/'
+dataset_name = "dataset_EG2021_60fps_train"
+
+path = './data_old/valid/'
+dataset_name = "dataset_EG2021_60fps_valid"
+
 for (dirpath, dirnames, filenames) in walk(path):
     files.extend(filenames)
 
@@ -18,8 +25,8 @@ body_v_list = []
 ref_v_list = []
 contact_list = []
 
+print(path + " dataset builder started.")
 for file in files:
-    """ Original """
     start = time.time()
     data = Anim.load_bvh(path + file, 'left', scaling_parameter)
     data.downsample_half()
@@ -27,43 +34,39 @@ for file in files:
                         'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
                         'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
                         'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-    data.add_noise(0.01, 1.5)
-    data.compute_reflocal_transform()
+    m_data = data.mirror()
+
+    data.compute_world_transform()
+    m_data.compute_world_transform()
+    data.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
+    m_data.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
+    data.compute_ref_transform()
+    m_data.compute_ref_transform()
     data.compute_velocities()
+    m_data.compute_velocities()
 
     name_list.append(data.name)
+    name_list.append(m_data.name)
     local_t_list.append(data.local_transformations)
+    local_t_list.append(m_data.local_transformations)
     world_t_list.append(data.world_transformations)
+    world_t_list.append(m_data.world_transformations)
     reflocal_t_list.append(data.reflocal_transformations)
+    reflocal_t_list.append(m_data.reflocal_transformations)
     body_v_list.append(data.body_velocities)
+    body_v_list.append(m_data.body_velocities)
     ref_v_list.append(data.ref_velocities)
-    contact_list.append(data.contact)
+    ref_v_list.append(m_data.ref_velocities)
     end = time.time()
-    print(data.name + ' done / elapsed_time = ' + str(end - start))
+    print(data.name + ' & ' + m_data.name +' done / elapsed_time = ' + str(end - start))
 
-    """ MIRRORED """
-    start = time.time()
-    data = data.mirror_sequence()
-    data.downsample_half()
-    data.delete_joints(['LHipJoint', 'RHipJoint',
-                        'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
-                        'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
-                        'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-    data.add_noise(0.01, 1.5)
-    data.compute_reflocal_transform()
-    data.compute_velocities()
+name_list = np.array(name_list)
+local_t_list = np.array(local_t_list)
+world_t_list = np.array(world_t_list)
+reflocal_t_list = np.array(reflocal_t_list)
+body_v_list = np.array(body_v_list)
+ref_v_list = np.array(ref_v_list)
 
-    name_list.append(data.name)
-    local_t_list.append(data.local_transformations)
-    world_t_list.append(data.world_transformations)
-    reflocal_t_list.append(data.reflocal_transformations)
-    body_v_list.append(data.body_velocities)
-    ref_v_list.append(data.ref_velocities)
-    contact_list.append(data.contact)
-    end = time.time()
-    print(data.name + ' done / elapsed_time = ' + str(end - start))
-
-dataset_name = "dataset_EG2021_60fps"
 np.savez_compressed(dataset_name,
                     name=name_list,
                     local=local_t_list,

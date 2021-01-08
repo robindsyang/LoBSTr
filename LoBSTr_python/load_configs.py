@@ -7,6 +7,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # config name
 config_name = 'EG2021'
+#config_name = 'TestConfig'
 
 with open(r'config.yaml') as file:
     configs = yaml.load(file, Loader=yaml.FullLoader)[config_name]
@@ -14,8 +15,10 @@ with open(r'config.yaml') as file:
 training_set = MocapDataest(configs['training_set'], configs['window_size'])
 valid_set = MocapDataest(configs['valid_set'], configs['window_size'])
 
+window_size = configs['window_size']
 input_dim, output_dim, hidden_dim, latent_dim = configs['net_params']
-if configs['model'] == 'LoBSTr_GRU':
+architecture = configs['model']
+if architecture == 'LoBSTr_GRU':
     model = net_arch.LoBSTr_GRU(input_dim, output_dim, hidden_dim, latent_dim).to(device)
 alpha, beta, gamma, delta = configs['loss_hparams']
 

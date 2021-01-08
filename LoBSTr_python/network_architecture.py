@@ -39,6 +39,7 @@ class LoBSTr_GRU(nn.Module):
 
 
 if __name__ == '__main__':
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = LoBSTr_GRU(4 * 4 * 4, 6 * 4 * 4, 1024, 256).to(device)
     input = torch.rand((2, 60, 4 * 4 * 4)).to(device)
     output_pose, output_contact = model(input)
