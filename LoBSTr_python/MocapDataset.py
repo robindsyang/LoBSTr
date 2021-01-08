@@ -42,10 +42,12 @@ class MocapDataest(Dataset):
         eps = 1e-16
 
         for i in range(len(self)):
-            self.refvel[i] = (self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1) - self.input_mean)\
-                             /(self.input_std + eps)
-            self.reflocal[i] = (self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1) - self.output_mean)\
-                               / (self.output_std + eps)
+            # self.refvel[i] = (self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1) - self.input_mean)\
+            #                  /(self.input_std + eps)
+            # self.reflocal[i] = (self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1) - self.output_mean)\
+            #                    / (self.output_std + eps)
+            self.refvel[i] = self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1)
+            self.reflocal[i] = self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1)
 
     def __len__(self):
         return self.name.shape[0]
