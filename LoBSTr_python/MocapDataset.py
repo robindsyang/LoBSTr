@@ -66,21 +66,22 @@ class MocapDataest(Dataset):
         np.random.seed(int((time.time() * 10000) % 1000))
         frame = np.random.randint(local.shape[0] - self.window_size + 1)
 
-        toebase_transformations = world[frame + self.window_size - 2:frame + self.window_size, toebase_indices, :3, 3]
+        toebase_transformation = world[frame + self.window_size - 1, toebase_indices, :3, 3]
         contact = np.zeros(2)
 
-        if toebase_transformations[1, 0, 1] < 0.05:
+        if toebase_transformation[0, 1] < 0.05:
             contact[0] = 1
-        if toebase_transformations[1, 1, 1] < 0.05:
+        if toebase_transformation[1, 1] < 0.05:
             contact[1] = 1
 
         sample = {'input': torch.tensor(refvel[frame:frame + self.window_size]).float(),
                   'gt_pose': torch.tensor(reflocal[frame + self.window_size - 1]).float(),
                   'gt_prev_pose': torch.tensor(reflocal[frame + self.window_size - 2]).float(),
-                  'gt_contact': torch.tensor(contact).long()}
-                  # 'gt_poss': torch.tensor(toebase_transformations).float()}
+                  'gt_contact': torch.tensor(contact).long(),
+                  'gt_pos': torch.tensor(toebase_transformation).float()}
 
         return sample
+
 
 if __name__ == '__main__':
     mocap_dataset = MocapDataest('dataset_EG2021_60fps.npz', 60)

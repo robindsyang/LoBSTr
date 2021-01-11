@@ -34,7 +34,7 @@ try:
             # gt_pose, gt_contact, gt_poss = training_batch['gt_pose'].to(device), \
             #                                training_batch['gt_contact'].to(device), \
             #                                training_batch['gt_poss'].to(device)
-            gt_prev_pose, gt_pose, gt_contact = training_batch['gt_prev_pose'].to(device), \
+            gt_prev_pose, gt_pose, gt_contact, gt_pos = training_batch['gt_prev_pose'].to(device), \
                                                 training_batch['gt_pose'].to(device), \
                                                 training_batch['gt_contact'].to(device)
             output_pose, output_contact = model(training_batch['input'].to(device))
@@ -42,7 +42,7 @@ try:
             # destandardize output and gt poses
 
             pose_loss = criterion_L1(output_pose, gt_pose)
-            fk_loss, vel_loss = criterion_FKV(output_pose, gt_pose, gt_prev_pose)
+            fk_loss, vel_loss = criterion_FKV(output_pose, gt_pose, gt_prev_pose, gt_pos)
             contact_loss = criterion_CrossEnt(output_contact[:, :2], gt_contact[:, 0]) \
                            + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
             loss = alpha * pose_loss + beta * fk_loss + gamma * vel_loss + delta * contact_loss

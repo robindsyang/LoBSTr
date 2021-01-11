@@ -14,7 +14,7 @@ class FK_Velocity_Loss(nn.Module):
         super(FK_Velocity_Loss, self).__init__()
         torch.set_printoptions(precision=6)
 
-    def forward(self, output_pose, gt_pose, gt_prev_pose):
+    def forward(self, output_pose, gt_pose, gt_prev_pose, gt_pos):
         gt_prev_pose = gt_prev_pose.view(-1, 2, 3, 4, 4)
         gt_pose = gt_pose.view(-1, 2, 3, 4, 4)
         output_pose = output_pose.view(-1, 2, 3, 4, 4)
@@ -40,6 +40,9 @@ class FK_Velocity_Loss(nn.Module):
         gt_prev_fk = gt_prev_fk[:, :, :3, 3]
         gt_fk = gt_fk[:, :, :3, 3]
         output_fk = output_fk[:, :, :3, 3]
+
+        print(gt_fk, gt_pos)
+        exit()
 
         gt_vel = gt_fk - gt_prev_fk
         output_vel = output_fk - gt_prev_fk
