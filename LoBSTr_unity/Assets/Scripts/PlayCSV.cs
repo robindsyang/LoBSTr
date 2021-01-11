@@ -12,6 +12,7 @@ public class PlayCSV : MonoBehaviour
         Local,
         World,
         Reflocal,
+        Refworld,
         Body_vel,
         Ref_vel
     };
@@ -51,6 +52,19 @@ public class PlayCSV : MonoBehaviour
                     {
                         Joints[j].transform.position = pos;
                         Joints[j].transform.rotation = Quaternion.LookRotation(forward, up);
+                    }
+                    else if (representation == Representation.Refworld)
+                    {
+                        if (j == 0)
+                        {
+                            Joints[j].transform.position = pos;
+                            Joints[j].transform.rotation = Quaternion.LookRotation(forward, up);
+                        }
+                        else
+                        {
+                            Joints[j].transform.position = Root.transform.position + Root.transform.TransformVector(pos);
+                            Joints[j].transform.rotation = Root.transform.rotation * Quaternion.LookRotation(forward, up);
+                        }
                     }
                     else
                     {
@@ -149,6 +163,9 @@ public class PlayCSV : MonoBehaviour
             case Representation.Reflocal:
                 path += "_reflocal";
                 break;
+            case Representation.Refworld:
+                path += "_refworld";
+                break;
             case Representation.Body_vel:
                 path += "_body_vel";
                 break;
@@ -177,29 +194,6 @@ public class PlayCSV : MonoBehaviour
                 var v = 0f;
                 float.TryParse(Line[j], out v);
                 Animation[i, j] = v;
-            }
-        }
-
-        var World_Data = System.IO.File.ReadAllText(Application.dataPath + original_path + "_world" + ".csv");
-
-        lines = World_Data.Split("\n"[0]);
-        row_count = lines.Length;
-        lineData = (lines[0].Trim()).Split(","[0]);
-        column_count = lineData.Length;
-        x = 0f;
-        float.TryParse(lineData[0], out x);
-
-        Animation_World = new float[row_count, column_count];
-        Length = row_count;
-
-        for (int i = 0; i < row_count - 1; i++)
-        {
-            var Line = (lines[i].Trim()).Split(","[0]);
-            for (int j = 0; j < column_count; j++)
-            {
-                var v = 0f;
-                float.TryParse(Line[j], out v);
-                Animation_World[i, j] = v;
             }
         }
     }

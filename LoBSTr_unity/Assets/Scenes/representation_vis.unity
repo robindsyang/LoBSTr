@@ -1415,7 +1415,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &258049105
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1429,9 +1429,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target_fps: 60
-  file_path: /Animations/m_LocomotionFlat01_000
-  representation: 1
-  Length: 4086
+  file_path: /Animations/LocomotionFlat01_000
+  representation: 3
+  Length: 4087
   Root: {fileID: 890602078}
   Joints:
   - {fileID: 890602078}
@@ -8965,16 +8965,12 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1279848172, guid: 4dd4657f08cb24ca6ae72b8bc327eb3a, type: 3}
-      propertyPath: isLocal
-      value: 1
+      propertyPath: file_path
+      value: /Animations/LocomotionFlat01_000
       objectReference: {fileID: 0}
-    - target: {fileID: 3313041404004104162, guid: 4dd4657f08cb24ca6ae72b8bc327eb3a, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.645
-      objectReference: {fileID: 0}
-    - target: {fileID: 3313041404004104162, guid: 4dd4657f08cb24ca6ae72b8bc327eb3a, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.291
+    - target: {fileID: 1279848172, guid: 4dd4657f08cb24ca6ae72b8bc327eb3a, type: 3}
+      propertyPath: representation
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3687942686448091955, guid: 4dd4657f08cb24ca6ae72b8bc327eb3a, type: 3}
       propertyPath: m_Name
@@ -8982,7 +8978,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3687942686448091955, guid: 4dd4657f08cb24ca6ae72b8bc327eb3a, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3687942686448091956, guid: 4dd4657f08cb24ca6ae72b8bc327eb3a, type: 3}
       propertyPath: m_LocalPosition.x

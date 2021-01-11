@@ -287,27 +287,27 @@ class Animation:
 if __name__ == '__main__':
     filename = 'LocomotionFlat01_000'
     a = Animation.load_bvh('./data/PFNN/' + filename + '.bvh', 'left', 0.0594)
-    a.downsample_half()
-    a.delete_joints(['LHipJoint', 'RHipJoint',
-                     'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
-                     'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
-                     'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-
-    m_a = a.mirror()
+    # a.downsample_half()
+    # a.delete_joints(['LHipJoint', 'RHipJoint',
+    #                  'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
+    #                  'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
+    #                  'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
+    #
+    # m_a = a.mirror()
 
     a.write_csv('local', '%1.6f')
-    m_a.write_csv('local', '%1.6f')
-    a.compute_world_transform()
-    m_a.compute_world_transform()
-    a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
-    m_a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
-    a.write_csv('world', '%1.6f')
-    m_a.write_csv('world', '%1.6f')
-    a.compute_ref_transform()
-    m_a.compute_ref_transform()
-    a.write_csv('reflocal', '%1.6f')
-    m_a.write_csv('reflocal', '%1.6f')
-    a.write_csv('refworld', '%1.6f')
-    m_a.write_csv('refworld', '%1.6f')
-    a.compute_velocities()
-    m_a.compute_velocities()
+    # m_a.write_csv('local', '%1.6f')
+    # a.compute_world_transform()
+    # m_a.compute_world_transform()
+    # a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
+    # m_a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
+    # a.write_csv('world', '%1.6f')
+    # m_a.write_csv('world', '%1.6f')
+    # a.compute_ref_transform()
+    # m_a.compute_ref_transform()
+    # a.write_csv('reflocal', '%1.6f')
+    # m_a.write_csv('reflocal', '%1.6f')
+    # a.write_csv('refworld', '%1.6f')
+    # m_a.write_csv('refworld', '%1.6f')
+    # a.compute_velocities()
+    # m_a.compute_velocities()

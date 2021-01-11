@@ -1191,7 +1191,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3313041404004104161}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.582, y: 0.185, z: -0.012}
+  m_LocalPosition: {x: -0.645, y: 0.291, z: -0.012}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 8663631331205040364}
@@ -1375,8 +1375,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ded1270a92815499eaf3ba2563350572, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  file_path: /Animations/LocomotionFlat01_000
-  isLocal: 1
+  target_fps: 60
+  file_path: /Animations/m_LocomotionFlat01_000
+  representation: 0
+  Length: 0
   Root: {fileID: 2796055997176772685}
   Joints:
   - {fileID: 2796055997176772685}
@@ -1408,6 +1410,7 @@ MonoBehaviour:
   - {fileID: 3636622714477187386}
   isPlay: 0
   current_frame: 0
+  vel_updated: 0
 --- !u!1 &4421376280447154342
 GameObject:
   m_ObjectHideFlags: 0
