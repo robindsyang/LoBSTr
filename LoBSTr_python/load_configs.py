@@ -6,8 +6,8 @@ import yaml
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # config name
-config_name = 'EG2021'
-#config_name = 'TestConfig'
+#config_name = 'EG2021'
+config_name = 'TestConfig'
 
 with open(r'config.yaml') as file:
     configs = yaml.load(file, Loader=yaml.FullLoader)[config_name]

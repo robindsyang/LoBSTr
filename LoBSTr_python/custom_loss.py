@@ -9,15 +9,20 @@ criterion_MSE = nn.MSELoss()
 
 
 class FK_Velocity_Loss(nn.Module):
+    """
+    validity checked
+    """
 
     def __init__(self):
         super(FK_Velocity_Loss, self).__init__()
         torch.set_printoptions(precision=6)
 
     def forward(self, output_pose, gt_pose, gt_prev_pose, gt_pos):
-        gt_prev_pose = gt_prev_pose.view(-1, 2, 3, 4, 4)
-        gt_pose = gt_pose.view(-1, 2, 3, 4, 4)
-        output_pose = output_pose.view(-1, 2, 3, 4, 4)
+        gt_pose = gt_pose.reshape(-1, 8, 4, 4)
+
+        gt_prev_pose = gt_prev_pose.view(-1, 2, 4, 4, 4)
+        gt_pose = gt_pose.view(-1, 2, 4, 4, 4)
+        output_pose = output_pose.view(-1, 2, 4, 4, 4)
 
         gt_prev_fk = torch.eye(4).to(device)
         gt_prev_fk = gt_prev_fk.repeat(2, 1, 1)
@@ -32,7 +37,7 @@ class FK_Velocity_Loss(nn.Module):
         output_fk = output_fk.repeat(output_pose.shape[0], 1, 1, 1)
 
         for i in range(2):
-            for j in range(3):
+            for j in range(4):
                 gt_prev_fk[:, i] = torch.bmm(gt_prev_fk[:, i], gt_prev_pose[:, i, j])
                 gt_fk[:, i] = torch.bmm(gt_fk[:, i], gt_pose[:, i, j])
                 output_fk[:, i] = torch.bmm(output_fk[:, i].clone(), output_pose[:, i, j])
@@ -40,9 +45,6 @@ class FK_Velocity_Loss(nn.Module):
         gt_prev_fk = gt_prev_fk[:, :, :3, 3]
         gt_fk = gt_fk[:, :, :3, 3]
         output_fk = output_fk[:, :, :3, 3]
-
-        print(gt_fk, gt_pos)
-        exit()
 
         gt_vel = gt_fk - gt_prev_fk
         output_vel = output_fk - gt_prev_fk

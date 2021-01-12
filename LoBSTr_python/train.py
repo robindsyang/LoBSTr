@@ -29,14 +29,15 @@ try:
         v_batch_loss = 0
 
         model.train()
-        training_dataloader = DataLoader(training_set, batch_size=batch_size, shuffle=True, num_workers=8)
+        training_dataloader = DataLoader(training_set, batch_size=batch_size, shuffle=True, num_workers=0)
         for training_batch_idx, training_batch in enumerate(training_dataloader):
             # gt_pose, gt_contact, gt_poss = training_batch['gt_pose'].to(device), \
             #                                training_batch['gt_contact'].to(device), \
             #                                training_batch['gt_poss'].to(device)
             gt_prev_pose, gt_pose, gt_contact, gt_pos = training_batch['gt_prev_pose'].to(device), \
                                                 training_batch['gt_pose'].to(device), \
-                                                training_batch['gt_contact'].to(device)
+                                                training_batch['gt_contact'].to(device), \
+                                                training_batch['gt_pos'].to(device)
             output_pose, output_contact = model(training_batch['input'].to(device))
 
             # destandardize output and gt poses
@@ -54,7 +55,7 @@ try:
             optimizer.step()
 
         model.eval()
-        validation_dataloader = DataLoader(valid_set, batch_size=batch_size, shuffle=True, num_workers=8)
+        validation_dataloader = DataLoader(valid_set, batch_size=batch_size, shuffle=True, num_workers=0)
         for valid_batch_idx, valid_batch in enumerate(validation_dataloader):
             # gt_pose, gt_contact, gt_poss = valid_batch['gt_pose'].to(device), \
             #                                valid_batch['gt_contact'].to(device), \

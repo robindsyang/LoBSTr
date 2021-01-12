@@ -154,6 +154,7 @@ class Animation:
         return mirrored
 
     def delete_joints(self, joint_names):
+        # check local offset
         for joint in joint_names:
             idx = np.where(self.joints == joint)[0][0]
             parent_idx = self.parents[idx]
@@ -227,6 +228,7 @@ class Animation:
             basis_matrix[1] = np.array([0, 1, 0])
             basis_matrix[0] = np.cross(basis_matrix[1], basis_matrix[2])
             reflocal_transformations[f, 0, :3, :3] = np.transpose(basis_matrix)
+            refworld_transformations[f, 0, :3, :3] = np.transpose(basis_matrix)
 
             direct_joints = np.where(self.parents == 0)
             direct_joints = np.delete(direct_joints, 0)
@@ -258,6 +260,7 @@ class Animation:
         self.local_transformations = np.delete(self.local_transformations, 0, 0)
         self.world_transformations = np.delete(self.world_transformations, 0, 0)
         self.reflocal_transformations = np.delete(self.reflocal_transformations, 0, 0)
+        self.refworld_transformations = np.delete(self.refworld_transformations, 0, 0)
         self.length -= 1
 
     def write_csv(self, representation, precision):
@@ -287,27 +290,38 @@ class Animation:
 if __name__ == '__main__':
     filename = 'LocomotionFlat01_000'
     a = Animation.load_bvh('./data/PFNN/' + filename + '.bvh', 'left', 0.0594)
-    # a.downsample_half()
-    # a.delete_joints(['LHipJoint', 'RHipJoint',
-    #                  'LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
-    #                  'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
-    #                  'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
-    #
-    # m_a = a.mirror()
+    a.downsample_half()
+    a.delete_joints(['LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
+                     'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
+                     'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
+
+    m_a = a.mirror()
 
     a.write_csv('local', '%1.6f')
-    # m_a.write_csv('local', '%1.6f')
-    # a.compute_world_transform()
-    # m_a.compute_world_transform()
+    m_a.write_csv('local', '%1.6f')
+    a.compute_world_transform()
+    m_a.compute_world_transform()
     # a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
     # m_a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
-    # a.write_csv('world', '%1.6f')
-    # m_a.write_csv('world', '%1.6f')
-    # a.compute_ref_transform()
-    # m_a.compute_ref_transform()
-    # a.write_csv('reflocal', '%1.6f')
-    # m_a.write_csv('reflocal', '%1.6f')
-    # a.write_csv('refworld', '%1.6f')
-    # m_a.write_csv('refworld', '%1.6f')
-    # a.compute_velocities()
-    # m_a.compute_velocities()
+    a.write_csv('world', '%1.6f')
+    m_a.write_csv('world', '%1.6f')
+    a.compute_ref_transform()
+    m_a.compute_ref_transform()
+
+    fk = np.eye(4)
+    fk2 = np.eye(4)
+    for i in range(1, 5):
+        fk = np.matmul(fk, a.reflocal_transformations[0, i])
+        fk2 = np.matmul(fk2, a.reflocal_transformations[0, i+5])
+
+    print(fk)
+    print(fk2)
+    print(a.refworld_transformations[0, 4])
+    print(a.refworld_transformations[0, 9])
+
+    a.write_csv('reflocal', '%1.6f')
+    m_a.write_csv('reflocal', '%1.6f')
+    a.write_csv('refworld', '%1.6f')
+    m_a.write_csv('refworld', '%1.6f')
+    a.compute_velocities()
+    m_a.compute_velocities()

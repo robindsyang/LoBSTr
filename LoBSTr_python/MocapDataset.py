@@ -4,9 +4,9 @@ import time
 from torch.utils.data import Dataset, DataLoader
 
 # upper indices
-upper_indices = [0, 9, 10, 11]
-lower_indices = [1, 2, 3, 5, 6, 7]
-toebase_indices = [4, 8]
+upper_indices = [0, 11, 12, 13]
+lower_indices = [1, 2, 3, 4, 6, 7, 8, 9]
+EE_indices = [4, 9]
 
 
 class MocapDataest(Dataset):
@@ -19,6 +19,7 @@ class MocapDataest(Dataset):
         self.local = dataset_npz['local']
         self.world = dataset_npz['world']
         self.reflocal = dataset_npz['reflocal']
+        self.refworld = dataset_npz['refworld']
         self.bodyvel = dataset_npz['bodyvel']
         self.refvel = dataset_npz['refvel']
         self.window_size = window_size
@@ -60,13 +61,14 @@ class MocapDataest(Dataset):
         local = self.local[idx]
         world = self.world[idx]
         reflocal = self.reflocal[idx]
+        refworld = self.refworld[idx]
         bodyvel = self.bodyvel[idx]
         refvel = self.refvel[idx]
 
         np.random.seed(int((time.time() * 10000) % 1000))
         frame = np.random.randint(local.shape[0] - self.window_size + 1)
 
-        toebase_transformation = world[frame + self.window_size - 1, toebase_indices, :3, 3]
+        toebase_transformation = refworld[frame + self.window_size - 1, EE_indices, :3, 3]
         contact = np.zeros(2)
 
         if toebase_transformation[0, 1] < 0.05:
