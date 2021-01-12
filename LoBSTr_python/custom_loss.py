@@ -17,7 +17,7 @@ class FK_Velocity_Loss(nn.Module):
         super(FK_Velocity_Loss, self).__init__()
         torch.set_printoptions(precision=6)
 
-    def forward(self, output_pose, gt_pose, gt_prev_pose, gt_pos):
+    def forward(self, output_pose, gt_pose, gt_prev_pose):
         gt_pose = gt_pose.reshape(-1, 8, 4, 4)
 
         gt_prev_pose = gt_prev_pose.view(-1, 2, 4, 4, 4)

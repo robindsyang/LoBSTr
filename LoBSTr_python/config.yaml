@@ -10,19 +10,37 @@ EG2021: &DEFAULT
   model: LoBSTr_GRU
 
   # in out hidden latent
-  net_params: [64, 96, 1024, 256]
-  batch_size: 8
+  net_params: [64, 128, 1024, 256]
+  batch_size: 32
 
   loss_hparams: [1, 0.1, 0.1, 1.0e-6]
 
   optimizer: Adam
 
+HyperTuning:
+  training_set: dataset_EG2021_60fps_train.npz
+  valid_set: dataset_EG2021_60fps_valid.npz
+
+  lr: 1.0e-4
+  lr_decay: 0.999
+  num_epochs: 3000
+
+  window_size: 60
+  model: LoBSTr_GRU
+
+  # in out hidden latent
+  net_params: [64, 128, 1024, 256]
+  batch_size: 64
+
+  loss_hparams: [1.0, 1.0e-1, 1.0e-1, 1.0e-5]
+
+  optimizer: Adam
 
 TestConfig:
   training_set: dataset_EG2021_60fps_test.npz
   valid_set: dataset_EG2021_60fps_test.npz
 
-  lr: 1.0e-5
+  lr: 1.0e-3
   lr_decay: 0.99
   num_epochs: 1500
 

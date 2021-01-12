@@ -6,7 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 # upper indices
 upper_indices = [0, 11, 12, 13]
 lower_indices = [1, 2, 3, 4, 6, 7, 8, 9]
-EE_indices = [4, 9]
+toebase_indices = [5, 10]
 
 
 class MocapDataest(Dataset):
@@ -26,29 +26,29 @@ class MocapDataest(Dataset):
 
         for i in range(len(self)):
             if i == 0:
-                input = self.refvel[i]
-                output = self.reflocal[i]
+                input_cat = self.refvel[i]
+                output_cat = self.reflocal[i]
             else:
-                input = np.concatenate((input, self.refvel[i]), axis=0)
-                output = np.concatenate((output, self.reflocal[i]), axis=0)
+                input_cat = np.concatenate((input_cat, self.refvel[i]), axis=0)
+                output_cat = np.concatenate((output_cat, self.reflocal[i]), axis=0)
 
-        input = input[:, upper_indices].reshape(input.shape[0], -1)
-        output = output[:, lower_indices].reshape(output.shape[0], -1)
+        input_cat = input_cat[:, upper_indices].reshape(input_cat.shape[0], -1)
+        output_cat = output_cat[:, lower_indices].reshape(output_cat.shape[0], -1)
 
-        self.input_mean = np.mean(input, axis=0)
-        self.input_std = np.std(input, axis=0)
-        self.output_mean = np.mean(output, axis=0)
-        self.output_std = np.std(output, axis=0)
+        self.input_mean = np.mean(input_cat, axis=0)
+        self.input_std = np.std(input_cat, axis=0)
+        self.output_mean = np.mean(output_cat, axis=0)
+        self.output_std = np.std(output_cat, axis=0)
 
         eps = 1e-16
 
         for i in range(len(self)):
-            # self.refvel[i] = (self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1) - self.input_mean)\
-            #                  /(self.input_std + eps)
-            # self.reflocal[i] = (self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1) - self.output_mean)\
-            #                    / (self.output_std + eps)
-            self.refvel[i] = self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1)
-            self.reflocal[i] = self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1)
+            self.refvel[i] = (self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1) - self.input_mean) \
+                             / (self.input_std + eps)
+            self.reflocal[i] = (self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1) - self.output_mean)\
+                               / (self.output_std + eps)
+            # self.refvel[i] = self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1)
+            # self.reflocal[i] = self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1)
 
     def __len__(self):
         return self.name.shape[0]
@@ -68,7 +68,7 @@ class MocapDataest(Dataset):
         np.random.seed(int((time.time() * 10000) % 1000))
         frame = np.random.randint(local.shape[0] - self.window_size + 1)
 
-        toebase_transformation = refworld[frame + self.window_size - 1, EE_indices, :3, 3]
+        toebase_transformation = world[frame + self.window_size - 1, toebase_indices, :3, 3]
         contact = np.zeros(2)
 
         if toebase_transformation[0, 1] < 0.05:
@@ -79,8 +79,8 @@ class MocapDataest(Dataset):
         sample = {'input': torch.tensor(refvel[frame:frame + self.window_size]).float(),
                   'gt_pose': torch.tensor(reflocal[frame + self.window_size - 1]).float(),
                   'gt_prev_pose': torch.tensor(reflocal[frame + self.window_size - 2]).float(),
-                  'gt_contact': torch.tensor(contact).long(),
-                  'gt_pos': torch.tensor(toebase_transformation).float()}
+                  'gt_contact': torch.tensor(contact).long()}
+        # 'gt_pos': torch.tensor(toebase_transformation).float()}
 
         return sample
 
