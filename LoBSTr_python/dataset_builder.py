@@ -6,15 +6,14 @@ import time
 scaling_parameter = 0.0594
 
 files = []
-# path = './data_test/'
-# path = './data_test/'
-# dataset_name = "dataset_EG2021_60fps_test"
+path = './data_old/all/'
+dataset_name = "dataset_EG2021_60fps"
 
 # path = './data_old/train/'
 # dataset_name = "dataset_EG2021_60fps_train"
 
-path = './data_old/valid/'
-dataset_name = "dataset_EG2021_60fps_valid"
+# path = './data_old/valid/'
+# dataset_name = "dataset_EG2021_60fps_valid"
 
 for (dirpath, dirnames, filenames) in walk(path):
     files.extend(filenames)

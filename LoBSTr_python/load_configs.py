@@ -6,15 +6,17 @@ import yaml
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # config name
-config_name = 'EG2021'
-config_name = 'HyperTuning'
+config_name = 'LoBSTr'
+#config_name = 'EG2021'
+#config_name = 'HyperTuning'
 #config_name = 'TestConfig'
+
 
 with open(r'config.yaml') as file:
     configs = yaml.load(file, Loader=yaml.FullLoader)[config_name]
 
-training_set = MocapDataest(configs['training_set'], configs['window_size'])
-valid_set = MocapDataest(configs['valid_set'], configs['window_size'])
+training_set = MocapDataest(configs['training_set'], configs['window_size'], configs['batch_size'])
+valid_set = MocapDataest(configs['valid_set'], configs['window_size'], configs['batch_size'])
 
 window_size = configs['window_size']
 input_dim, output_dim, hidden_dim, latent_dim = configs['net_params']

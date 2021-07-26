@@ -8,12 +8,14 @@ upper_indices = [0, 11, 12, 13]
 lower_indices = [1, 2, 3, 4, 6, 7, 8, 9]
 toebase_indices = [5, 10]
 
-
 class MocapDataest(Dataset):
     """Motion Capture dataset"""
 
-    def __init__(self, npz_path, window_size):
+    def __init__(self, npz_path, window_size, batch_size):
         dataset_npz = np.load(npz_path, 'r', allow_pickle=True)
+
+        self.data_count = len(dataset_npz['name'])
+        self.batch_size = batch_size
 
         self.name = dataset_npz['name']
         self.local = dataset_npz['local']
@@ -23,50 +25,43 @@ class MocapDataest(Dataset):
         self.bodyvel = dataset_npz['bodyvel']
         self.refvel = dataset_npz['refvel']
         self.window_size = window_size
+        self.input = dataset_npz['refvel']
+        self.output = dataset_npz['reflocal']
 
-        for i in range(len(self)):
-            if i == 0:
-                input_cat = self.refvel[i]
-                output_cat = self.reflocal[i]
-            else:
-                input_cat = np.concatenate((input_cat, self.refvel[i]), axis=0)
-                output_cat = np.concatenate((output_cat, self.reflocal[i]), axis=0)
+        # LoBSTr input/output
+        for i in range(self.data_count):
+            frame = self.input[i].shape[0]
+            self.input[i] = self.input[i][:, upper_indices, :3, 1:]
+            self.input[i] = self.input[i].reshape(frame, -1)
+            self.input[i] = np.concatenate(
+                (self.input[i].reshape(self.input[i].shape[0], -1), self.world[i][:, 0, 1, 3].reshape(frame, 1)),
+                axis=1)
 
-        input_cat = input_cat[:, upper_indices].reshape(input_cat.shape[0], -1)
-        output_cat = output_cat[:, lower_indices].reshape(output_cat.shape[0], -1)
+            self.output[i] = self.output[i][:, lower_indices, :3, 1:3].reshape(frame, -1)
 
-        self.input_mean = np.mean(input_cat, axis=0)
-        self.input_std = np.std(input_cat, axis=0)
-        self.output_mean = np.mean(output_cat, axis=0)
-        self.output_std = np.std(output_cat, axis=0)
+        input_cat = np.vstack(self.input)
+        output_cat = np.vstack(self.output)
 
-        eps = 1e-16
-
-        for i in range(len(self)):
-            self.refvel[i] = (self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1) - self.input_mean) \
-                             / (self.input_std + eps)
-            self.reflocal[i] = (self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1) - self.output_mean)\
-                               / (self.output_std + eps)
-            # self.refvel[i] = self.refvel[i][:, upper_indices].reshape(self.refvel[i].shape[0], -1)
-            # self.reflocal[i] = self.reflocal[i][:, lower_indices].reshape(self.reflocal[i].shape[0], -1)
+        self.input_mean = np.mean(input_cat, axis=0, keepdims=True)
+        self.input_std = np.std(input_cat, axis=0, keepdims=True)
+        self.output_mean = np.mean(output_cat, axis=0, keepdims=True)
+        self.output_std = np.std(output_cat, axis=0, keepdims=True)
 
     def __len__(self):
-        return self.name.shape[0]
+        return max(self.name.shape[0], self.batch_size)
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        name = self.name[idx]
-        local = self.local[idx]
-        world = self.world[idx]
-        reflocal = self.reflocal[idx]
-        refworld = self.refworld[idx]
-        bodyvel = self.bodyvel[idx]
-        refvel = self.refvel[idx]
+        idx = idx % self.data_count
 
-        np.random.seed(int((time.time() * 10000) % 1000))
-        frame = np.random.randint(local.shape[0] - self.window_size + 1)
+        world = self.world[idx]
+        input = self.input[idx];
+        output = self.output[idx];
+
+        np.random.seed(int((time.time() * 100000) % 10000))
+        frame = np.random.randint(input.shape[0] - self.window_size + 1)
 
         toebase_transformation = world[frame + self.window_size - 1, toebase_indices, :3, 3]
         contact = np.zeros(2)
@@ -76,18 +71,24 @@ class MocapDataest(Dataset):
         if toebase_transformation[1, 1] < 0.05:
             contact[1] = 1
 
-        sample = {'input': torch.tensor(refvel[frame:frame + self.window_size]).float(),
-                  'gt_pose': torch.tensor(reflocal[frame + self.window_size - 1]).float(),
-                  'gt_prev_pose': torch.tensor(reflocal[frame + self.window_size - 2]).float(),
+        sample = {'input': torch.tensor(input[frame:frame + self.window_size]).float(),
+                  'gt_pose': torch.tensor(output[frame + self.window_size - 1]).float(),
+                  'gt_prev_pose': torch.tensor(output[frame + self.window_size - 2]).float(),
                   'gt_contact': torch.tensor(contact).long()}
-        # 'gt_pos': torch.tensor(toebase_transformation).float()}
 
         return sample
 
+    def getinput_byname(self, name):
+        for i in range(self.data_count):
+            if self.name[i] == name:
+                idx = i;
+
+        return self.input[idx].copy(), self.world[idx].copy()
 
 if __name__ == '__main__':
-    mocap_dataset = MocapDataest('dataset_EG2021_60fps.npz', 60)
-    dataloader = DataLoader(mocap_dataset, batch_size=2, shuffle=True, num_workers=1)
+    mocap_dataset = MocapDataest('dataset_EG2021_60fps_train.npz', 60, 256)
+
+    dataloader = DataLoader(mocap_dataset, batch_size=256, shuffle=True, num_workers=1)
 
     for i_batch, sample_batched in enumerate(dataloader):
         print("batch num: " + str(i_batch), "batch size: " + str(len(sample_batched['input'])))
