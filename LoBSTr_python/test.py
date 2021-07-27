@@ -3,21 +3,25 @@ import numpy as np
 import torch
 from load_configs import training_set, valid_set, window_size, device
 
-def normalize_np(sequence, mean, std):
+def standardize(sequence, mean, std):
     eps = 1e-15
-    n_animation = np.divide((sequence - mean), std + eps)
-    return n_animation
+    n_sequence = (sequence - mean) / (std+eps)
+    return n_sequence
 
-def denormalize_np(sequence, mean, std):
-    dn_animation = (np.multiply(sequence, std) + mean).astype(np.float32)
-    return dn_animation
+def destandardize(sequence, mean, std):
+    dn_sequence = sequence * std + mean
+    return dn_sequence
 
-output_mean = training_set.output_mean
-output_std = training_set.output_std
+input_mean = torch.tensor(training_set.input_mean).float().to(device)
+input_std = torch.tensor(training_set.input_std).float().to(device)
+output_mean = torch.tensor(training_set.output_mean).float().to(device)
+output_std = torch.tensor(training_set.output_std).float().to(device)
+
 output_dim = output_mean.shape[0]
 
 start = time.time()
-model = torch.load("models/LoBSTr_0416_135009/LoBSTr_GRU_60").to(device)
+#model = torch.load("models/LoBSTr_0727_143530/LoBSTr_GRU_60").to(device)
+model = torch.load("models/LoBSTr_0727_144639/LoBSTr_GRU_60").to(device)
 model.eval()
 
 files = ['LocomotionFlat06_001']
@@ -35,10 +39,12 @@ for filename in files:
         input_np = input_sequence[i - window_size:i]
         input = torch.from_numpy(input_np).float()
         input = torch.unsqueeze(input, 0).to(device)
+        s_input = standardize(input, input_mean, input_std)
 
-        lowerpose, contact = model(input)
+        lowerpose, contact = model(s_input)
 
         predicted = torch.squeeze(lowerpose)
+        predicted = destandardize(predicted, output_mean, output_std).squeeze()
         predictions.append(predicted.detach().cpu().numpy())
         contact = torch.squeeze(contact)
         out_contact = torch.zeros(2)
@@ -51,12 +57,11 @@ for filename in files:
 
         contacts.append(out_contact.detach().cpu().numpy())
 
-    print(world_sequence.shape)
-
     predictions = np.asarray(predictions)
-    print(predictions.shape)
-
     contacts = np.asarray(contacts)
+
+    print(world_sequence.shape)
+    print(predictions.shape)
     print(contacts.shape)
 
     predictions = np.concatenate((world_sequence, predictions), axis=1)

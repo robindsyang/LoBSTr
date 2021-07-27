@@ -58,18 +58,20 @@ try:
             gt_prev_pose, gt_pose, gt_contact = training_batch['gt_prev_pose'].to(device), \
                                                 training_batch['gt_pose'].to(device), \
                                                 training_batch['gt_contact'].to(device)
+
             s_input = standardize(training_batch['input'].to(device), input_mean, input_std)
             s_gt_pose = standardize(gt_pose, output_mean, output_std)
 
-            output_pose, output_contact = model(training_batch['input'].to(device))
+            output_pose, output_contact = model(s_input)
 
             pose_loss = criterion_L1(output_pose, s_gt_pose)
 
             ds_output_pose = destandardize(output_pose, output_mean, output_std)
-
             fk_loss, vel_loss = criterion_FKV(ds_output_pose, gt_pose, gt_prev_pose)
+
             contact_loss = criterion_CrossEnt(output_contact[:, :2], gt_contact[:, 0]) \
-                           + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
+                          + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
+
             loss = alpha * pose_loss + beta * fk_loss + gamma * vel_loss + delta * contact_loss
 
             batch_pose_loss += pose_loss.item()
@@ -89,18 +91,19 @@ try:
             gt_prev_pose, gt_pose, gt_contact = valid_batch['gt_prev_pose'].to(device), \
                                                 valid_batch['gt_pose'].to(device), \
                                                 valid_batch['gt_contact'].to(device)
+
             s_input = standardize(valid_batch['input'].to(device), input_mean, input_std)
             s_gt_pose = standardize(gt_pose, output_mean, output_std)
 
-            output_pose, output_contact = model(valid_batch['input'].to(device))
+            output_pose, output_contact = model(s_input)
 
             pose_loss = criterion_L1(output_pose, s_gt_pose)
 
             ds_output_pose = destandardize(output_pose, output_mean, output_std)
-
             fk_loss, vel_loss = criterion_FKV(ds_output_pose, gt_pose, gt_prev_pose)
+
             contact_loss = criterion_CrossEnt(output_contact[:, :2], gt_contact[:, 0]) \
-                           + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
+                         + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
             loss = alpha * pose_loss + beta * fk_loss + gamma * vel_loss + delta * contact_loss
 
             v_batch_pose_loss += pose_loss.item()

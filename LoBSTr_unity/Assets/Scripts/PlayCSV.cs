@@ -43,7 +43,7 @@ public class PlayCSV : MonoBehaviour
             {
                 for (int j = 0; j < Joints.Count; j++)
                 {
-                    if (j < 4) // world
+                    if (j < 4) // refworld
                     {
                         Vector3 up = new Vector3(Animation[current_frame, 9 * j]
                             , Animation[current_frame, 9 * j + 3]
@@ -55,8 +55,8 @@ public class PlayCSV : MonoBehaviour
                             , Animation[current_frame, 9 * j + 5]
                             , Animation[current_frame, 9 * j + 8]);
                         
-                        Joints[j].transform.position = pos;
-                        Joints[j].transform.rotation = Quaternion.LookRotation(forward, up);
+                        Joints[j].transform.localPosition = pos;
+                        Joints[j].transform.localRotation = Quaternion.LookRotation(forward, up);
                     }
                     else // reflocal
                     {
@@ -185,15 +185,10 @@ public class PlayCSV : MonoBehaviour
             if (child.name != "Sphere" && child.name != "Cylinder" && child.name != "Cube")
                 Joints.Add(child.gameObject);
         }
-
-        if (Animation.GetLength(1) / 9 != Joints.Count)
-            Debug.LogError("Joint count not match!");
     }
 
     public void Load_Animation(string path)
     {
-        string original_path = path;
-
         switch (representation)
         {
             case Representation.Local:

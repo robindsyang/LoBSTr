@@ -31,13 +31,18 @@ class MocapDataest(Dataset):
         # LoBSTr input/output
         for i in range(self.data_count):
             frame = self.input[i].shape[0]
-            self.input[i] = self.input[i][:, upper_indices, :3, 1:]
-            self.input[i] = self.input[i].reshape(frame, -1)
-            self.input[i] = np.concatenate(
-                (self.input[i].reshape(self.input[i].shape[0], -1), self.world[i][:, 0, 1, 3].reshape(frame, 1)),
-                axis=1)
-
+            self.input[i] = self.input[i][:, upper_indices, :3, 1:].reshape(frame, -1)
+            self.input[i] = np.concatenate((self.input[i], self.world[i][:, 0, 1, 3].reshape(frame, 1)), axis=1)
             self.output[i] = self.output[i][:, lower_indices, :3, 1:3].reshape(frame, -1)
+
+            # temp = self.refworld[i].copy()
+            # temp = temp[:, upper_indices, :3, 1:].reshape(frame, -1)
+            #
+            # test = np.concatenate((temp[:, :36], self.output[0]), axis=1)
+            # test_vel = np.concatenate((self.input[i][:, :36], self.output[i]), axis=1)
+            # np.savetxt('LocomotionFlat01_000_LoBSTr_worldoutput.csv', test, delimiter=',')
+            # np.savetxt('LocomotionFlat01_000_LoBSTr_inputoutput.csv', test_vel, delimiter=',')
+            # exit()
 
         input_cat = np.vstack(self.input)
         output_cat = np.vstack(self.output)
@@ -83,16 +88,16 @@ class MocapDataest(Dataset):
             if self.name[i] == name:
                 idx = i;
 
-        return self.input[idx].copy(), self.world[idx].copy()
+        return self.input[idx].copy(), self.refworld[idx].copy()
 
 if __name__ == '__main__':
     mocap_dataset = MocapDataest('dataset_EG2021_60fps_train.npz', 60, 256)
-
     dataloader = DataLoader(mocap_dataset, batch_size=256, shuffle=True, num_workers=1)
 
     for i_batch, sample_batched in enumerate(dataloader):
         print("batch num: " + str(i_batch), "batch size: " + str(len(sample_batched['input'])))
         print(sample_batched['input'].shape)
         print(sample_batched['gt_pose'].shape)
+        print(sample_batched['gt_prev_pose'].shape)
         print(sample_batched['gt_contact'].shape)
-        print(sample_batched['gt_poss'].shape)
+

@@ -61,7 +61,7 @@ LoBSTr:
 
   lr: 1.0e-3
   lr_decay: 0.999
-  num_epochs: 6000
+  num_epochs: 3000
 
   window_size: 60
   model: LoBSTr_GRU
