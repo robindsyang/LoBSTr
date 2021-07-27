@@ -12,7 +12,6 @@ class LoBSTr_GRU(nn.Module):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
 
-        # latent mapping
         self.gru = nn.GRU(self.input_dim, self.hidden_dim, bias=True, batch_first=True)
         self.fc1 = nn.Linear(self.hidden_dim, latent_dim)
         self.fc2 = nn.Linear(latent_dim, output_dim)

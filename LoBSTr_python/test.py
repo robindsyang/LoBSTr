@@ -20,14 +20,13 @@ output_std = torch.tensor(training_set.output_std).float().to(device)
 output_dim = output_mean.shape[0]
 
 start = time.time()
-#model = torch.load("models/LoBSTr_0727_143530/LoBSTr_GRU_60").to(device)
-model = torch.load("models/LoBSTr_0727_144639/LoBSTr_GRU_60").to(device)
+model = torch.load("models/LoBSTr_0727_181224/LoBSTr_GRU_60").to(device)
 model.eval()
 
 files = ['LocomotionFlat06_001']
 
 for filename in files:
-    input_sequence, world_sequence = valid_set.getinput_byname(filename)
+    input_sequence, world_sequence, local_sequence = valid_set.getinput_byname(filename)
     world_sequence = world_sequence[59:, [0, 11, 12, 13]]
     world_sequence = world_sequence[:, :, :3, 1:]
     world_sequence = world_sequence.reshape(world_sequence.shape[0], -1)
@@ -60,13 +59,7 @@ for filename in files:
     predictions = np.asarray(predictions)
     contacts = np.asarray(contacts)
 
-    print(world_sequence.shape)
-    print(predictions.shape)
-    print(contacts.shape)
-
     predictions = np.concatenate((world_sequence, predictions), axis=1)
     predictions = np.concatenate((predictions, contacts), axis=1)
 
-    print(predictions.shape)
-
-    np.savetxt(filename + '_LoBSTr_inputoutput.csv', predictions, delimiter=',')
+    np.savetxt(filename + '_LoBSTr_output.csv', predictions, delimiter=',')

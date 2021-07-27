@@ -2,17 +2,11 @@ import torch
 import torch.nn as nn
 
 torch.autograd.set_detect_anomaly(True)
-
 nn.Module.dump_patches = True
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 criterion_MSE = nn.MSELoss()
 
-
 class FK_Velocity_Loss(nn.Module):
-    """
-    validity checked
-    """
-
     def __init__(self):
         super(FK_Velocity_Loss, self).__init__()
         torch.set_printoptions(precision=6)

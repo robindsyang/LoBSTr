@@ -158,7 +158,6 @@ public class PlayCSV : MonoBehaviour
                                 continue;
                             }
                         }
-
                         vel_updated = true;
                     }
                 }
@@ -210,10 +209,7 @@ public class PlayCSV : MonoBehaviour
                 path += "_ref_vel";
                 break;
             case Representation.Test:
-                path += "_LoBSTr_inputoutput";
-                // upper world (8899, 64)
-                // lower reflocal (8899, 128)
-                // + 2 contact (8899, 194)
+                path += "_LoBSTr_output";
                 break;
         }
 

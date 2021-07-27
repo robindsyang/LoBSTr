@@ -1599,7 +1599,7 @@ GameObject:
   - component: {fileID: 236630732}
   - component: {fileID: 236630731}
   m_Layer: 0
-  m_Name: StickMan (Input/Output) (1)
+  m_Name: StickMan (Input/Output)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

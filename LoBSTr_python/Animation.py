@@ -1,7 +1,7 @@
 import os
 import re
 import numpy as np
-from copy import copy, deepcopy
+from copy import deepcopy
 from scipy.spatial.transform import Rotation as R
 
 
@@ -15,6 +15,7 @@ class Animation:
         self.parents = parents
         self.local_transformations = local_transformations
         self.world_transformations = None
+        self.world_transformations_noised = None
         self.reflocal_transformations = None
         self.refworld_transformations = None
         self.body_velocities = None
@@ -189,6 +190,7 @@ class Animation:
         self.world_transformations = world_transformations
 
     def add_noise_world(self, noised_joints, sigma, degree):
+        self.world_transformations_noised = self.world_transformations.copy()
         for f in range(self.length):
             for joint in noised_joints:
                 j = np.where(self.joints == joint)[0][0]
@@ -215,7 +217,7 @@ class Animation:
 
                 noise_transformation[:3, :3] = rot
                 noise_transformation[:3, 3] = np.transpose(v)
-                self.world_transformations[f, j] = np.matmul(self.world_transformations[f, j], noise_transformation)
+                self.world_transformations_noised[f, j] = np.matmul(self.world_transformations[f, j], noise_transformation)
 
     def compute_ref_transform(self):
         reflocal_transformations = self.local_transformations.copy()
@@ -246,14 +248,15 @@ class Animation:
         self.refworld_transformations = refworld_transformations
 
     def compute_velocities(self):
-        self.body_velocities = np.delete(self.world_transformations.copy(), 0, 0)
-        self.ref_velocities = np.delete(self.world_transformations.copy(), 0, 0)
+        self.body_velocities = np.delete(self.world_transformations_noised.copy(), 0, 0)
+        self.ref_velocities = np.delete(self.world_transformations_noised.copy(), 0, 0)
 
         for f in range(self.length - 1):
-            inv_ref_orientation = np.linalg.inv(self.world_transformations[f + 1, 0, :3, :3])
+            inv_ref_orientation = np.linalg.inv(self.world_transformations_noised[f + 1, 0, :3, :3])
             for j in range(len(self.joints)):
-                translation = self.world_transformations[f+1, j, :3, 3] - self.world_transformations[f, j, :3, 3]
-                rotation =  np.matmul(self.world_transformations[f+1, j, :3, :3], np.linalg.inv(self.world_transformations[f, j, :3, :3]))
+                translation = self.world_transformations_noised[f + 1, j, :3, 3] - self.world_transformations_noised[f, j, :3, 3]
+                rotation = np.matmul(self.world_transformations_noised[f + 1, j, :3, :3],
+                                     np.linalg.inv(self.world_transformations_noised[f, j, :3, :3]))
 
                 translation_ref = np.matmul(inv_ref_orientation, translation)
                 rotation_ref = np.matmul(inv_ref_orientation, rotation)
@@ -266,6 +269,7 @@ class Animation:
         # delete first frames to match the length
         self.local_transformations = np.delete(self.local_transformations, 0, 0)
         self.world_transformations = np.delete(self.world_transformations, 0, 0)
+        self.world_transformations_noised = np.delete(self.world_transformations_noised, 0, 0)
         self.reflocal_transformations = np.delete(self.reflocal_transformations, 0, 0)
         self.refworld_transformations = np.delete(self.refworld_transformations, 0, 0)
         self.length -= 1
@@ -310,24 +314,13 @@ if __name__ == '__main__':
     m_a.compute_ref_transform()
     m_a.compute_velocities()
 
-    # a.write_csv('local', '%1.6f')
-    # m_a.write_csv('local', '%1.6f')
-    # a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
-    # m_a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
-    # a.write_csv('world', '%1.6f')
-    # m_a.write_csv('world', '%1.6f')
-    # a.write_csv('reflocal', '%1.6f')
-    # m_a.write_csv('reflocal', '%1.6f')
-    # a.write_csv('refworld', '%1.6f')
-    # m_a.write_csv('refworld', '%1.6f')
-
-    # fk = np.eye(4)
-    # fk2 = np.eye(4)
-    # for i in range(1, 5):
-    #     fk = np.matmul(fk, a.reflocal_transformations[0, i])
-    #     fk2 = np.matmul(fk2, a.reflocal_transformations[0, i+5])
-    #
-    # print(fk)
-    # print(fk2)
-    # print(a.refworld_transformations[0, 4])
-    # print(a.refworld_transformations[0, 9])
+    a.write_csv('local', '%1.6f')
+    m_a.write_csv('local', '%1.6f')
+    a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
+    m_a.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
+    a.write_csv('world', '%1.6f')
+    m_a.write_csv('world', '%1.6f')
+    a.write_csv('reflocal', '%1.6f')
+    m_a.write_csv('reflocal', '%1.6f')
+    a.write_csv('refworld', '%1.6f')
+    m_a.write_csv('refworld', '%1.6f')

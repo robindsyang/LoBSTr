@@ -6,14 +6,12 @@ import time
 scaling_parameter = 0.0594
 
 files = []
-# path = './data_old/all/'
-# dataset_name = "dataset_EG2021_60fps"
 
-path = './data_old/train/'
-dataset_name = "dataset_EG2021_60fps_train_cr"
+# path = './data_old/train/'
+# dataset_name = "dataset_LoBSTr_60fps_train_noised_0.005_1"
 
-# path = './data_old/valid/'
-# dataset_name = "dataset_EG2021_60fps_valid"
+path = './data_old/valid/'
+dataset_name = "dataset_LoBSTr_60fps_valid_noised_0.005_1"
 
 for (dirpath, dirnames, filenames) in walk(path):
     files.extend(filenames)
@@ -32,7 +30,7 @@ for file in files:
     start = time.time()
     data = Anim.load_bvh(path + file, 'left', scaling_parameter)
     data.downsample_half()
-    # never delete lowebody joints
+
     data.delete_joints(['LowerBack', 'Spine', 'Spine1', 'Neck', 'Neck1',
                         'LeftShoulder', 'LeftArm', 'LeftForeArm', 'LeftFingerBase', 'LeftHandIndex1', 'LThumb',
                         'RightShoulder', 'RightArm', 'RightForeArm', 'RightFingerBase', 'RightHandIndex1', 'RThumb'])
@@ -40,8 +38,8 @@ for file in files:
 
     data.compute_world_transform()
     m_data.compute_world_transform()
-    # data.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
-    # m_data.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.01, 1.5)
+    data.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.005, 1)
+    m_data.add_noise_world(['Hips', 'Head', 'LeftHand', 'RightHand'], 0.005, 1)
     data.compute_ref_transform()
     m_data.compute_ref_transform()
     data.compute_velocities()
