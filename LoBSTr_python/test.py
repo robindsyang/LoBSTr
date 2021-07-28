@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import torch
-from load_configs import training_set, valid_set, window_size, device
+from load_configs import input_mean, input_std, output_mean, output_std, valid_set, window_size, device
 
 def standardize(sequence, mean, std):
     eps = 1e-15
@@ -11,11 +11,6 @@ def standardize(sequence, mean, std):
 def destandardize(sequence, mean, std):
     dn_sequence = sequence * std + mean
     return dn_sequence
-
-input_mean = torch.tensor(training_set.input_mean).float().to(device)
-input_std = torch.tensor(training_set.input_std).float().to(device)
-output_mean = torch.tensor(training_set.output_mean).float().to(device)
-output_std = torch.tensor(training_set.output_std).float().to(device)
 
 output_dim = output_mean.shape[0]
 

@@ -28,3 +28,8 @@ if configs['optimizer'] == 'Adam':
 
 num_epochs = configs['num_epochs']
 batch_size = configs['batch_size']
+
+input_mean = torch.tensor(training_set.input_mean).float().to(device)
+input_std = torch.tensor(training_set.input_std).float().to(device)
+output_mean = torch.tensor(training_set.output_mean).float().to(device)
+output_std = torch.tensor(training_set.output_std).float().to(device)

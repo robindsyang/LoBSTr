@@ -4,20 +4,23 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
 
-from load_configs import config_name, device, training_set, valid_set, window_size, architecture, model, \
-    optimizer, num_epochs, lr_decay, batch_size, alpha, beta, gamma, delta
+from load_configs import config_name, device, training_set, input_mean, input_std, output_mean, output_std, valid_set, \
+    window_size, architecture, model, optimizer, num_epochs, lr_decay, batch_size, alpha, beta, gamma, delta
 import custom_loss as c_loss
 
 import datetime
 
+
 def standardize(sequence, mean, std):
     eps = 1e-15
-    n_sequence = (sequence - mean) / (std+eps)
+    n_sequence = (sequence - mean) / (std + eps)
     return n_sequence
+
 
 def destandardize(sequence, mean, std):
     dn_sequence = sequence * std + mean
     return dn_sequence
+
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -32,10 +35,6 @@ summary = SummaryWriter()
 
 best_v_loss = 0
 eps = 1e-15
-input_mean = torch.tensor(training_set.input_mean).float().to(device)
-input_std = torch.tensor(training_set.input_std).float().to(device)
-output_mean = torch.tensor(training_set.output_mean).float().to(device)
-output_std = torch.tensor(training_set.output_std).float().to(device)
 
 try:
     for epoch in range(num_epochs):
@@ -69,7 +68,7 @@ try:
             fk_loss, vel_loss = criterion_FKV(ds_output_pose, gt_pose, gt_prev_pose)
 
             contact_loss = criterion_CrossEnt(output_contact[:, :2], gt_contact[:, 0]) \
-                          + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
+                           + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
 
             loss = alpha * pose_loss + beta * fk_loss + gamma * vel_loss + delta * contact_loss
 
@@ -102,7 +101,7 @@ try:
             fk_loss, vel_loss = criterion_FKV(ds_output_pose, gt_pose, gt_prev_pose)
 
             contact_loss = criterion_CrossEnt(output_contact[:, :2], gt_contact[:, 0]) \
-                         + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
+                           + criterion_CrossEnt(output_contact[:, 2:], gt_contact[:, 1])
             loss = alpha * pose_loss + beta * fk_loss + gamma * vel_loss + delta * contact_loss
 
             v_batch_pose_loss += pose_loss.item()
