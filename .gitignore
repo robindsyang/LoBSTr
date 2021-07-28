@@ -21,8 +21,8 @@ log/
 
 # Python
 *.npz
-*.csv
 *.bvh
+# *.csv
 
 # Unity
 *.meta
