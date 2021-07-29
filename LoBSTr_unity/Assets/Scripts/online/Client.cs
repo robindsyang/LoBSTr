@@ -6,8 +6,6 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using Valve.VR;
 using AsyncIO;
-using System;
-using System.IO;
 
 public class Client : MonoBehaviour
 {
@@ -53,9 +51,6 @@ public class Client : MonoBehaviour
     private RequestSocket requestSocket;
 
     public List<string> input_list;
-    public List<string> save_input_list;
-
-    float past_time;
 
     void Start()
     {
@@ -75,7 +70,6 @@ public class Client : MonoBehaviour
         requestSocket.Connect("tcp://localhost:3550");
         
         input_list = new List<string>();
-        save_input_list = new List<string>();
 
         L_prev_contact = false;
         R_prev_contact = false;
@@ -91,19 +85,8 @@ public class Client : MonoBehaviour
     {
         if(mode==Mode.Animation)
         {
-            if (frame_count >= length){
-                frame_count = 0;    
-            }
-
-            if(frame_count == 300)
-            {
-                using(TextWriter tw = new StreamWriter(Application.dataPath + "/SavedList.txt"))
-                {
-                    foreach (String s in save_input_list)
-                        tw.WriteLine(s);
-                    tw.Close();
-                }
-            }
+            if (frame_count >= length)
+                frame_count = 0;               
 
             PlayAnimation();
         }
@@ -117,7 +100,6 @@ public class Client : MonoBehaviour
         {
             string input = GenerateInput();
             input_list.Add(input);
-            save_input_list.Add(input);
 
             if (input_list.Count > target_framerate)
                 input_list.RemoveAt(0);
