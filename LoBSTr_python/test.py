@@ -35,18 +35,23 @@ for filename in files:
         input = torch.unsqueeze(input, 0).to(device)
         s_input = standardize(input, input_mean, input_std)
 
-        lowerpose, contact = model(s_input)
+        predicted, contact = model(s_input)
 
-        predicted = torch.squeeze(lowerpose)
+        predicted = torch.squeeze(predicted)
         predicted = destandardize(predicted, output_mean, output_std).squeeze()
         predictions.append(predicted.detach().cpu().numpy())
+
         contact = torch.squeeze(contact)
         out_contact = torch.zeros(2)
 
-        if (contact[1] > contact[0]):
+        p_layer = torch.nn.Softmax()
+        contact[:2] = p_layer(contact[:2])
+        contact[2:] = p_layer(contact[2:])
+
+        if (contact[1] > 0.5):
             out_contact[0] = 1
 
-        if (contact[3] > contact[2]):
+        if (contact[3] > 0.5):
             out_contact[1] = 1
 
         contacts.append(out_contact.detach().cpu().numpy())

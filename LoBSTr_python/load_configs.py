@@ -3,6 +3,8 @@ from MocapDataset import MocapDataest
 import network_architecture as net_arch
 import yaml
 
+print("loading configs")
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # config name
@@ -33,3 +35,6 @@ input_mean = torch.tensor(training_set.input_mean).float().to(device)
 input_std = torch.tensor(training_set.input_std).float().to(device)
 output_mean = torch.tensor(training_set.output_mean).float().to(device)
 output_std = torch.tensor(training_set.output_std).float().to(device)
+
+print("configs loaded")
+

@@ -23,6 +23,7 @@ log/
 *.npz
 *.bvh
 # *.csv
+*.patch
 
 # Unity
 *.meta
