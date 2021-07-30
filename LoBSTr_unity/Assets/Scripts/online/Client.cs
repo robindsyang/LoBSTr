@@ -6,6 +6,8 @@ using MathNet.Numerics.LinearAlgebra;
 using MathNet.Numerics.LinearAlgebra.Double;
 using Valve.VR;
 using AsyncIO;
+using UnityEngine.XR.Management;
+using System.Collections;
 
 public class Client : MonoBehaviour
 {
@@ -47,6 +49,10 @@ public class Client : MonoBehaviour
             frame_count = 0;
             calibrated = true;    
         }
+        else
+        {
+            StartCoroutine("InitXR");
+        }
 
         Application.targetFrameRate = target_framerate;
 
@@ -56,6 +62,11 @@ public class Client : MonoBehaviour
         input_list = new List<string>();
 
         height_coeff = 1f;
+    }
+
+    public IEnumerator InitXR()
+    {
+        yield return  XRGeneralSettings.Instance.Manager.InitializeLoader();
     }
 
     void FixedUpdate()

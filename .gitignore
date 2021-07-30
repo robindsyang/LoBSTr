@@ -29,9 +29,5 @@ log/
 *.meta
 *.csproj
 *.sln
-Library/
 Logs/
-obj/
-Packages/
-UserSettings/
 Temp/
