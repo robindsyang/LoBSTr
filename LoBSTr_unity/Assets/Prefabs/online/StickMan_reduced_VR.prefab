@@ -701,32 +701,8 @@ MonoBehaviour:
   - {x: 0, y: 0, z: 0, w: 0}
   - {x: 0, y: 0, z: 0, w: 0}
   - {x: 0, y: 0, z: 0, w: 0}
-  IK_postprocessing: 1
-  LLegJoints:
-  - {fileID: 7113346042604766277}
-  - {fileID: 7113346042115774556}
-  - {fileID: 7113346042939755817}
-  - {fileID: 7113346043243625020}
-  RLegJoints:
-  - {fileID: 7113346043709855209}
-  - {fileID: 7113346042186054364}
-  - {fileID: 7113346044018700794}
-  - {fileID: 7113346042733017027}
-  Feet:
-  - {fileID: 7113346042575675795}
-  - {fileID: 7113346043701947885}
   Lcontact: 0
-  prev_Lcontact: 0
   Rcontact: 0
-  prev_Rcontact: 0
-  Lfixed_position: {x: 0, y: 0, z: 0}
-  Rfixed_position: {x: 0, y: 0, z: 0}
-  iter: 40
-  blending_window: 20
-  Lblend_parameter: 0
-  Rblend_parameter: 0
-  lp: 0
-  rp: 0
   input_list: []
 --- !u!1 &7113346042733017027
 GameObject:

@@ -681,6 +681,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1282d74f1480f144aeedf006ac23e5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mode: 0
   target_framerate: 60
   filename: LocomotionFlat06_001_LoBSTr_output
   length: 0
@@ -713,32 +714,8 @@ MonoBehaviour:
   - {x: 0, y: 0, z: 0, w: 0}
   - {x: 0, y: 0, z: 0, w: 0}
   - {x: 0, y: 0, z: 0, w: 0}
-  IK_postprocessing: 1
-  LLegJoints:
-  - {fileID: 6543273497765801282}
-  - {fileID: 6543273498256634203}
-  - {fileID: 6543273497432908846}
-  - {fileID: 6543273499276530491}
-  RLegJoints:
-  - {fileID: 6543273498807909614}
-  - {fileID: 6543273498452923355}
-  - {fileID: 6543273498482546941}
-  - {fileID: 6543273497905700548}
-  Feet:
-  - {fileID: 6543273497778112660}
-  - {fileID: 6543273498799064298}
   Lcontact: 0
-  prev_Lcontact: 0
   Rcontact: 0
-  prev_Rcontact: 0
-  Lfixed_position: {x: 0, y: 0, z: 0}
-  Rfixed_position: {x: 0, y: 0, z: 0}
-  iter: 40
-  blending_window: 20
-  Lblend_parameter: 0
-  Rblend_parameter: 0
-  lp: 0
-  rp: 0
   input_list: []
 --- !u!1 &6543273497905700548
 GameObject:
