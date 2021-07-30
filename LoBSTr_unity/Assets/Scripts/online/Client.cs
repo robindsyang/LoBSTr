@@ -28,30 +28,12 @@ public class Client : MonoBehaviour
     public GameObject[] Trackers;
     public GameObject[] Lowerbody_Joints;
     public float height_coeff;
-
     public Vector3[] past_positions;
     public Quaternion[] past_rotations;
 
-    public bool IK_postprocessing;
-    public GameObject[] LLegJoints;
-    public GameObject[] RLegJoints;
-    public GameObject[] Feet;
-    public bool Lcontact, prev_Lcontact;
-    public bool Rcontact, prev_Rcontact;
-    public Vector3 Lfixed_position;
-    public Vector3 Rfixed_position;
-    public float[,] LJacobian;
-    public float[,] RJacobian;
-    public int iter;
-    public int blending_window;
-    public float Lblend_parameter;
-    public float Rblend_parameter;
-    
-    [Range(0f, 1f)]
-    public float lp, rp;
+    public bool Lcontact, Rcontact;
 
     private RequestSocket requestSocket;
-
     public List<string> input_list;
 
     void Start()
@@ -73,12 +55,7 @@ public class Client : MonoBehaviour
         
         input_list = new List<string>();
 
-        Lfixed_position = Vector3.zero;
-        Rfixed_position = Vector3.zero;
-
         height_coeff = 1f;
-        Lblend_parameter = 1;
-        Rblend_parameter = 1;
     }
 
     void FixedUpdate()
