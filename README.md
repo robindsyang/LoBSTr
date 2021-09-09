@@ -1,3 +1,6 @@
+# Paper
+https://onlinelibrary.wiley.com/doi/full/10.1111/cgf.142631
+
 # Abstract
 With the popularization of games and VR/AR devices, there is a growing need for capturing human motion with a sparse set of tracking data.
 In this paper, we introduce a deep neural network (DNN) based method for real-time prediction of the lower-body pose only from the tracking signals of the upper-body joints.
