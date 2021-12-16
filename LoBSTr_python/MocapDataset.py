@@ -32,7 +32,8 @@ class MocapDataest(Dataset):
             frame = self.input[i].shape[0]
             self.input[i] = self.input[i][:, upper_indices, :3, 1:].reshape(frame, -1)
             self.input[i] = np.concatenate((self.input[i], self.world[i][:, 0, 1, 3].reshape(frame, 1)), axis=1)
-            self.output[i] = self.output[i][:, lower_indices, :3, 1:3].reshape(frame, -1)
+            self.output[i] = self.output[i][:, lower_indices].reshape(frame, -1)
+            # self.output[i] = self.output[i][:, lower_indices, :3, 1:3].reshape(frame, -1)
 
         input_cat = np.vstack(self.input)
         output_cat = np.vstack(self.output)

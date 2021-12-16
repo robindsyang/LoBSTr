@@ -14,7 +14,8 @@ public class Client : MonoBehaviour
     public enum Mode
     {
         Animation = 0,
-        VR
+        VR = 1,
+        CrayFish
     }
     public Mode mode;
     public int target_framerate;
@@ -42,12 +43,12 @@ public class Client : MonoBehaviour
     {
         ForceDotNet.Force();
 
-        if (mode==Mode.Animation)
+        if (mode == Mode.Animation)
         {
             Load_Animation();
             length = data.GetLength(0);
             frame_count = 0;
-            calibrated = true;    
+            calibrated = true;
         }
         else
         {
@@ -58,7 +59,7 @@ public class Client : MonoBehaviour
 
         requestSocket = new RequestSocket();
         requestSocket.Connect("tcp://localhost:3550");
-        
+
         input_list = new List<string>();
 
         height_coeff = 1f;
@@ -66,25 +67,25 @@ public class Client : MonoBehaviour
 
     public IEnumerator InitXR()
     {
-        yield return  XRGeneralSettings.Instance.Manager.InitializeLoader();
+        yield return XRGeneralSettings.Instance.Manager.InitializeLoader();
     }
 
     void FixedUpdate()
     {
-        if(mode==Mode.Animation)
+        if (mode == Mode.Animation)
         {
             if (frame_count >= length)
-                frame_count = 0;               
+                frame_count = 0;
 
             PlayAnimation();
         }
         else
         {
             if (SteamVR_Actions.default_GrabGrip.GetStateUp(SteamVR_Input_Sources.Any))
-                CalibrateTrackers();      
+                CalibrateTrackers();
         }
 
-        if(calibrated)
+        if (calibrated)
         {
             string input = GenerateInput();
             input_list.Add(input);
@@ -92,18 +93,20 @@ public class Client : MonoBehaviour
             if (input_list.Count > target_framerate)
                 input_list.RemoveAt(0);
 
-            if (input_list.Count == target_framerate)         
+            if (input_list.Count == target_framerate)
                 PredictLowerPose();
-        }    
+        }
         frame_count++;
     }
 
-    private void OnApplicationQuit() {           
+    private void OnApplicationQuit()
+    {
         requestSocket.Close();
         NetMQConfig.Cleanup();
     }
 
-    void CalibrateTrackers() {
+    void CalibrateTrackers()
+    {
         if (!calibrated)
         {
             height_coeff = 1f / Trackers[0].transform.position.y;
@@ -112,10 +115,10 @@ public class Client : MonoBehaviour
 
             foreach (GameObject t in Trackers)
                 t.transform.GetComponent<SteamVR_TrackedObject>().Calibrate();
-            
+
             Reference.GetComponent<ReferenceTransform>().enabled = true;
             calibrated = true;
-        }  
+        }
     }
     string GenerateInput()
     {
@@ -130,24 +133,38 @@ public class Client : MonoBehaviour
             Quaternion joint_rot = Trackers[i].transform.rotation;
 
             Vector3 joint_delta_p = Quaternion.Inverse(ref_w_rot) * (joint_pos - past_positions[i]);
-            Quaternion joint_delta_q = Quaternion.Inverse(ref_w_rot) *(joint_rot * Quaternion.Inverse(past_rotations[i]));
+            Quaternion joint_delta_q = Quaternion.Inverse(ref_w_rot) * (joint_rot * Quaternion.Inverse(past_rotations[i]));
             Matrix4x4 joint_delta_mat = Matrix4x4.Rotate(joint_delta_q);
             Vector3 joint_delta_up = new Vector3(joint_delta_mat.m01, joint_delta_mat.m11, joint_delta_mat.m21);
             Vector3 joint_delta_forward = new Vector3(joint_delta_mat.m02, joint_delta_mat.m12, joint_delta_mat.m22);
 
-            input_string += joint_delta_up.x.ToString("F8") + ", " + joint_delta_forward.x.ToString("F8") + ", " + joint_delta_p.x.ToString("F8") + ", ";
-            input_string += joint_delta_up.y.ToString("F8") + ", " + joint_delta_forward.y.ToString("F8") + ", " + joint_delta_p.y.ToString("F8") + ", ";
-            input_string += joint_delta_up.z.ToString("F8") + ", " + joint_delta_forward.z.ToString("F8") + ", " + joint_delta_p.z.ToString("F8") + ", ";
+            if (mode == Mode.CrayFish)
+            {
+                if (i == 1)
+                {
+                    input_string += joint_delta_up.x.ToString("F8") + ", " + joint_delta_forward.x.ToString("F8") + ", " + joint_delta_p.x.ToString("F8") + ", ";
+                    input_string += joint_delta_up.y.ToString("F8") + ", " + joint_delta_forward.y.ToString("F8") + ", " + joint_delta_p.y.ToString("F8") + ", ";
+                    input_string += joint_delta_up.z.ToString("F8") + ", " + joint_delta_forward.z.ToString("F8") + ", " + joint_delta_p.z.ToString("F8") + ", ";
+                }
+            }
+            else
+            {
+                input_string += joint_delta_up.x.ToString("F8") + ", " + joint_delta_forward.x.ToString("F8") + ", " + joint_delta_p.x.ToString("F8") + ", ";
+                input_string += joint_delta_up.y.ToString("F8") + ", " + joint_delta_forward.y.ToString("F8") + ", " + joint_delta_p.y.ToString("F8") + ", ";
+                input_string += joint_delta_up.z.ToString("F8") + ", " + joint_delta_forward.z.ToString("F8") + ", " + joint_delta_p.z.ToString("F8") + ", ";
+            }
 
             past_positions[i] = joint_pos;
             past_rotations[i] = joint_rot;
         }
+
         input_string += ref_height.ToString("F8");
 
         return input_string;
     }
 
-    void PredictLowerPose() {
+    void PredictLowerPose()
+    {
         requestSocket.SendFrame(string.Join(", ", input_list));
         string response = requestSocket.ReceiveFrameString();
         var splittedStrings = response.Split(' ');
@@ -189,7 +206,8 @@ public class Client : MonoBehaviour
         }
     }
 
-    void PlayAnimation() {
+    void PlayAnimation()
+    {
         for (int j = 0; j < Trackers.Length; j++)
         {
             Vector3 up = new Vector3(data[frame_count, 9 * j]
@@ -201,22 +219,23 @@ public class Client : MonoBehaviour
             Vector3 pos = new Vector3(data[frame_count, 9 * j + 2]
                 , data[frame_count, 9 * j + 5]
                 , data[frame_count, 9 * j + 8]);
-            
+
             Trackers[j].transform.localPosition = pos;
             Trackers[j].transform.localRotation = Quaternion.LookRotation(forward, up);
         }
 
-        if(!calibrated){
+        if (!calibrated)
+        {
             for (int j = 0; j < Lowerbody_Joints.Length; j++)
             {
-                Vector3 up = new Vector3(data[frame_count, 36 + 6*j]
-                    , data[frame_count, 36 + 6*j + 2]
-                    , data[frame_count, 36 + 6*j + 4]);
-                Vector3 forward = new Vector3(data[frame_count, 36 + 6*j + 1]
-                    , data[frame_count, 36 + 6*j + 3]
-                    , data[frame_count, 36 + 6*j + 5]);
+                Vector3 up = new Vector3(data[frame_count, 36 + 6 * j]
+                    , data[frame_count, 36 + 6 * j + 2]
+                    , data[frame_count, 36 + 6 * j + 4]);
+                Vector3 forward = new Vector3(data[frame_count, 36 + 6 * j + 1]
+                    , data[frame_count, 36 + 6 * j + 3]
+                    , data[frame_count, 36 + 6 * j + 5]);
                 Lowerbody_Joints[j].transform.localRotation = Quaternion.LookRotation(forward, up);
-            }          
+            }
         }
     }
 }
