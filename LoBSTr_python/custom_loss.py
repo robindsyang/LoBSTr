@@ -6,13 +6,27 @@ nn.Module.dump_patches = True
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 criterion_MSE = nn.MSELoss()
 
+def to4x4from9d(j, basis):
+    bl, j, _, _= basis.shape
+    mat = basis.reshape(bl, j, 3, 3)
+    x = torch.cross(mat[:, :, :, 0], mat[:, :, :, 1], dim=-1).unsqueeze(-1)
+    mat = torch.cat((x, mat), dim=-1)    
+    mat = torch.cat((mat, torch.tensor([0, 0, 0, 1]).repeat(bl, j, 1, 1).to(mat.device)), dim=-2)
+    return mat 
+
 class FK_Velocity_Loss(nn.Module):
     def __init__(self):
         super(FK_Velocity_Loss, self).__init__()
         torch.set_printoptions(precision=6)
 
     def forward(self, output_pose, gt_pose, gt_prev_pose):
-        gt_pose = gt_pose.reshape(-1, 8, 4, 4)
+        gt_pose = gt_pose.reshape(-1, 8, 3, 3)
+        gt_prev_pose = gt_prev_pose.reshape(-1, 8, 3, 3)
+        output_pose = output_pose.reshape(-1, 8, 3, 3)
+
+        gt_pose = to4x4from9d(8, gt_pose)
+        gt_prev_pose = to4x4from9d(8, gt_prev_pose)
+        output_pose = to4x4from9d(8, output_pose)
 
         gt_prev_pose = gt_prev_pose.view(-1, 2, 4, 4, 4)
         gt_pose = gt_pose.view(-1, 2, 4, 4, 4)

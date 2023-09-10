@@ -53,8 +53,8 @@ class MocapDataest(Dataset):
         idx = idx % self.data_count
 
         world = self.world[idx]
-        input = self.input[idx];
-        output = self.output[idx];
+        input = self.input[idx]
+        output = self.output[idx]
 
         np.random.seed(int((time.time() * 100000) % 10000))
         frame = np.random.randint(input.shape[0] - self.window_size + 1)
